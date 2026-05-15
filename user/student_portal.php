@@ -1,8 +1,9 @@
 <?php
+// 1. Ku xir database-ka (ka bax hal folder si aad u hesho admin_dashboard)
 include('../admin_dashboard/conn.php'); 
 session_start();
 
-// 1. Hubi haddii ardaygu Login yahay
+// 2. Hubi haddii ardaygu Login yahay - Haddii kale u tuur Login-ka
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'student') {
     header("Location: ../login.php");
     exit();
@@ -10,12 +11,12 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'student') {
 
 $user_id = $_SESSION['user_id']; 
 
-// 2. Soo saar xogta ardayga (Email, ID Code, iyo Class)
+// 3. Soo saar xogta ardayga (Email, ID, iyo Class)
 $student_query = "SELECT email, student_id_code, class FROM users WHERE id = '$user_id'";
 $student_result = mysqli_query($conn, $student_query);
 $student_data = mysqli_fetch_assoc($student_result);
 
-// 3. Soo saar dhibcaha iyo Credit Hours
+// 4. Soo saar dhibcaha iyo Credit Hours ka raadi table-ka marks
 $marks_query = "SELECT * FROM marks WHERE student_id = '$user_id'";
 $marks_result = mysqli_query($conn, $marks_query);
 ?>
@@ -29,8 +30,11 @@ $marks_result = mysqli_query($conn, $marks_query);
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
         .container { max-width: 1000px; background: white; margin: auto; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        
         .header-section { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1a237e; padding-bottom: 15px; margin-bottom: 25px; }
         h2 { color: #1a237e; margin: 0; font-size: 24px; }
+        
+        /* Badhanka Logout-ka */
         .logout-btn { background: #c62828; color: white; padding: 8px 18px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 14px; transition: 0.3s; }
         .logout-btn:hover { background: #b71c1c; }
         
@@ -39,11 +43,10 @@ $marks_result = mysqli_query($conn, $marks_query);
         .detail-box span { font-size: 16px; font-weight: 600; color: #1a237e; }
 
         table { width: 100%; border-collapse: collapse; background: white; }
-        th { background-color: #1a237e; color: white; padding: 15px; text-align: left; font-size: 14px; text-transform: uppercase; }
-        td { padding: 15px; border-bottom: 1px solid #eee; font-size: 15px; color: #444; }
+        th { background-color: #1a237e; color: white; padding: 15px; text-align: left; font-size: 13px; text-transform: uppercase; border: 1px solid #151b60; }
+        td { padding: 15px; border: 1px solid #eee; font-size: 15px; color: #444; }
         tr:hover { background-color: #fcfcfc; }
-        .total-font { font-weight: bold; color: #1a237e; background: #f0f2f5; }
-        .status-pass { color: green; font-weight: bold; }
+        .total-font { font-weight: bold; color: #1a237e; background: #f0f2f5; text-align: center; }
     </style>
 </head>
 <body>
@@ -51,7 +54,7 @@ $marks_result = mysqli_query($conn, $marks_query);
 <div class="container">
     <div class="header-section">
         <h2>Natiijada Imtixaanka (Grade Sheet)</h2>
-        <a href="logout.php" class="logout-btn">Ka Bax</a>
+        <a href="../logout.php" class="logout-btn">Ka Bax</a>
     </div>
     
     <div class="student-details">
@@ -77,16 +80,18 @@ $marks_result = mysqli_query($conn, $marks_query);
                 <th>Assignment (10)</th>
                 <th>Mid Exam (30)</th>
                 <th>Final Exam (50)</th>
-                <th>Total (100)</th>
+                <th style="text-align: center;">Total (100)</th>
             </tr>
         </thead>
         <tbody>
             <?php 
             if (mysqli_num_rows($marks_result) > 0) {
                 while($row = mysqli_fetch_assoc($marks_result)) {
+                    // Xisaabi wadarta
                     $total = $row['attendance'] + $row['assignment'] + $row['mid_exam'] + $row['final_exam'];
+                    
                     echo "<tr>
-                            <td>{$row['credit_hours']}</td>
+                            <td style='text-align:center;'>{$row['credit_hours']}</td>
                             <td>" . number_format($row['attendance'], 2) . "</td>
                             <td>" . number_format($row['assignment'], 2) . "</td>
                             <td>" . number_format($row['mid_exam'], 2) . "</td>
