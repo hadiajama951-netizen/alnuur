@@ -1,6 +1,9 @@
 <?php
 session_start();
+session_unset();
 session_destroy();
-header("Location: index.php");
+
+// Markuu qofku Logout dhaho, wuxuu ku noqonayaa bogga Login-ka
+header("Location: ../login.php");
 exit();
 ?>
