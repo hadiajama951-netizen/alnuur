@@ -1,104 +1,103 @@
 <?php
-include('../admin_dashboard/conn.php');
+include('../admin_dashboard/conn.php'); 
 session_start();
 
+// 1. Hubi haddii ardaygu Login yahay
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'student') {
     header("Location: ../login.php");
     exit();
 }
 
-$user_id = $_SESSION['user_id'];
+$user_id = $_SESSION['user_id']; 
 
-// Soo saar xogta ardayga
-$user_query = "SELECT email FROM users WHERE id = '$user_id'";
-$user_result = mysqli_query($conn, $user_query);
-$user_data = mysqli_fetch_assoc($user_result);
+// 2. Soo saar xogta ardayga (Email, ID Code, iyo Class)
+$student_query = "SELECT email, student_id_code, class FROM users WHERE id = '$user_id'";
+$student_result = mysqli_query($conn, $student_query);
+$student_data = mysqli_fetch_assoc($student_result);
 
-// Soo saar dhibcaha dhammaystiran
-$query = "SELECT m.*, s.subject_name 
-          FROM marks m
-          JOIN subjects s ON m.subject_id = s.id 
-          WHERE m.student_id = '$user_id'";
-
-$result = mysqli_query($conn, $query);
+// 3. Soo saar dhibcaha iyo Credit Hours
+$marks_query = "SELECT * FROM marks WHERE student_id = '$user_id'";
+$marks_result = mysqli_query($conn, $marks_query);
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="so">
 <head>
     <meta charset="UTF-8">
-    <title>ALNUUR SCHOOL | Grade Sheet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alnuur | Student Portal</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
-        .header { background: white; padding: 15px; border-bottom: 4px solid #1a237e; text-align: center; }
-        .header h1 { color: #2e7d32; margin: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; background: white; margin: auto; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .header-section { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1a237e; padding-bottom: 15px; margin-bottom: 25px; }
+        h2 { color: #1a237e; margin: 0; font-size: 24px; }
+        .logout-btn { background: #c62828; color: white; padding: 8px 18px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 14px; transition: 0.3s; }
+        .logout-btn:hover { background: #b71c1c; }
         
-        .container { max-width: 1100px; margin: 20px auto; padding: 15px; background: white; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        
-        .info-bar { background-color: #81c784; padding: 15px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; font-weight: bold; margin-bottom: 15px; }
-        
-        .nav-blue { background: #1a237e; color: white; padding: 10px; font-weight: bold; margin-bottom: 10px; }
+        .student-details { display: grid; grid-template-columns: repeat(3, 1fr); background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 30px; border-left: 5px solid #1a237e; }
+        .detail-box strong { display: block; color: #555; font-size: 13px; text-transform: uppercase; }
+        .detail-box span { font-size: 16px; font-weight: 600; color: #1a237e; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-        th { background-color: #f1f1f1; border: 1px solid #ccc; padding: 10px; text-align: left; color: #1a237e; }
-        td { border: 1px solid #ccc; padding: 10px; text-align: center; }
-        
-        .semester-title { background: #b3e5fc; padding: 8px; font-weight: bold; border: 1px solid #ccc; text-align: left; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th { background-color: #1a237e; color: white; padding: 15px; text-align: left; font-size: 14px; text-transform: uppercase; }
+        td { padding: 15px; border-bottom: 1px solid #eee; font-size: 15px; color: #444; }
+        tr:hover { background-color: #fcfcfc; }
+        .total-font { font-weight: bold; color: #1a237e; background: #f0f2f5; }
+        .status-pass { color: green; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <h1>ALNUUR SCHOOL</h1>
-    <p style="color:red; font-style:italic;">A Vehicle for Peace & Development</p>
-</div>
-
 <div class="container">
-    <div class="nav-blue">ALNUUR student login / GRADE SHEET</div>
-
-    <div class="info-bar">
-        <div>ID Number: ANS-<?php echo 1000 + $user_id; ?></div>
-        <div>Overall GPA: 3.50</div>
-        <div>Level of School: High School</div>
-        <div>Student Name: <?php echo strtoupper($user_data['email']); ?></div>
-        <div>Department: General Science</div>
-        <div>Program: Secondary</div>
+    <div class="header-section">
+        <h2>Natiijada Imtixaanka (Grade Sheet)</h2>
+        <a href="logout.php" class="logout-btn">Ka Bax</a>
+    </div>
+    
+    <div class="student-details">
+        <div class="detail-box">
+            <strong>Magaca Ardayga</strong>
+            <span><?php echo $student_data['email']; ?></span>
+        </div>
+        <div class="detail-box">
+            <strong>Class-ka Ardayga</strong>
+            <span><?php echo !empty($student_data['class']) ? $student_data['class'] : "Lama Qeexin"; ?></span>
+        </div>
+        <div class="detail-box">
+            <strong>Student ID</strong>
+            <span><?php echo $student_data['student_id_code']; ?></span>
+        </div>
     </div>
 
-    <div class="semester-title">Semester : 1st</div>
     <table>
         <thead>
             <tr>
-                <th style="text-align:left;">Course Title</th>
-                <th>Credit Hour</th>
-                <th>Attendance</th>
-                <th>Assignment</th>
-                <th>Mid Exam</th>
-                <th>Final Exam</th>
-                <th>Total Marks</th>
-                <th>Grade</th>
+                <th>Credit Hours</th>
+                <th>Attendance (10)</th>
+                <th>Assignment (10)</th>
+                <th>Mid Exam (30)</th>
+                <th>Final Exam (50)</th>
+                <th>Total (100)</th>
             </tr>
         </thead>
         <tbody>
-            <?php while($row = mysqli_fetch_assoc($result)): 
-                $total = $row['total_marks'];
-                if($total >= 90) $grade = 'A';
-                elseif($total >= 80) $grade = 'B';
-                elseif($total >= 70) $grade = 'C';
-                elseif($total >= 60) $grade = 'D';
-                else $grade = 'F';
+            <?php 
+            if (mysqli_num_rows($marks_result) > 0) {
+                while($row = mysqli_fetch_assoc($marks_result)) {
+                    $total = $row['attendance'] + $row['assignment'] + $row['mid_exam'] + $row['final_exam'];
+                    echo "<tr>
+                            <td>{$row['credit_hours']}</td>
+                            <td>" . number_format($row['attendance'], 2) . "</td>
+                            <td>" . number_format($row['assignment'], 2) . "</td>
+                            <td>" . number_format($row['mid_exam'], 2) . "</td>
+                            <td>" . number_format($row['final_exam'], 2) . "</td>
+                            <td class='total-font'>" . number_format($total, 2) . "</td>
+                          </tr>";
+                }
+            } else {
+                echo "<tr><td colspan='6' style='text-align:center; padding: 30px; color: #999;'>Wali wax dhibco ah looma diwaangelin ardaygan.</td></tr>";
+            }
             ?>
-            <tr>
-                <td style="text-align:left;"><?php echo $row['subject_name']; ?></td>
-                <td><?php echo $row['credit_hours']; ?></td>
-                <td><?php echo $row['attendance']; ?></td>
-                <td><?php echo $row['assignment']; ?></td>
-                <td><?php echo $row['mid_exam']; ?></td>
-                <td><?php echo $row['final_exam']; ?></td>
-                <td><strong><?php echo $total; ?></strong></td>
-                <td style="font-weight:bold; color:#1a237e;"><?php echo $grade; ?></td>
-            </tr>
-            <?php endwhile; ?>
         </tbody>
     </table>
 </div>
