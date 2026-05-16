@@ -163,7 +163,7 @@ $staff_query    = mysqli_query($conn, "SELECT * FROM users WHERE role='teacher' 
     <a href="add_user.php">Manage Users</a>
     <a href="marks.php">Add Marks</a>
     <a href="reports.php">Reports</a>
-    <a href="../logout.php" style="margin-top: 50px; border-top: 1px solid rgba(255,255,255,0.2);">Log Out</a>
+    <a href="../logout.php">Log Out</a>
 </div>
 
 <div class="main-content">

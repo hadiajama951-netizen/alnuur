@@ -1,78 +1,79 @@
 <?php
+// add_student.php
 session_start();
-include('conn.php'); 
+include('conn.php');
 
-// Hubi in qofka soo galay uu yahay Admin
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+// Restrict access to Admins and Teachers
+if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'teacher')) {
     header("Location: ../login.php");
     exit();
-}
-
-// Marka la gujiyo Save Subject
-if (isset($_POST['add_subject'])) {
-    $subject_name = mysqli_real_escape_string($conn, $_POST['subject_name']);
-    $subject_code = mysqli_real_escape_string($conn, $_POST['subject_code']);
-    $class = mysqli_real_escape_string($conn, $_POST['class']);
-
-    // Hubi haddii ay maaddadan ama koodhkan horay u jireen
-    $check_subject = mysqli_query($conn, "SELECT * FROM subjects WHERE subject_code='$subject_code'");
-    if (mysqli_num_rows($check_subject) > 0) {
-        $error = "Subject Code-kan horay ayaa loo diwaangeliyey sxb!";
-    } else {
-        // Ku shub database-ka
-        $insert_query = "INSERT INTO subjects (subject_name, subject_code, class) VALUES ('$subject_name', '$subject_code', '$class')";
-        if (mysqli_query($conn, $insert_query)) {
-            // Markay si guul leh u kaydsanto, u weeci bogga weyn ee maaddooyinka
-            header("Location: subject.php");
-            exit();
-        } else {
-            $error = "Cilad ayaa dhacday: " . mysqli_error($conn);
-        }
-    }
 }
 ?>
 
 <!DOCTYPE html>
-<html lang="so">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Add New Subject | Alnuur School</title>
+    <title>Add Student - Alnuur School</title>
+    <style>
+        :root { --primary-blue: #1a237e; --dark-blue: #0d145a; --white: #ffffff; --bg-light: #f8f9fa; --green: #2e7d32; --red: #c62828; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; background-color: var(--bg-light); min-height: 100vh; }
+        .sidebar { width: 260px; height: 100vh; background: var(--primary-blue); color: var(--white); position: fixed; }
+        .sidebar h2 { text-align: center; padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin: 0; }
+        .sidebar a { display: block; color: var(--white); padding: 15px 25px; text-decoration: none; }
+        .sidebar a:hover { background: var(--dark-blue); }
+        .main-content { margin-left: 260px; padding: 40px; width: calc(100% - 260px); box-sizing: border-box; }
+        .container-box { background: var(--white); padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 30px; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .form-group { display: flex; flex-direction: column; margin-bottom: 15px; }
+        .form-group label { margin-bottom: 5px; font-weight: bold; font-size: 14px; color: #334155; }
+        .form-group input, .form-group select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
+        .btn-submit { background: var(--primary-blue); color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; font-size: 16px; }
+        .btn-submit:hover { background: var(--dark-blue); }
+    </style>
 </head>
-<body style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 40px 10px; display: flex; justify-content: center; align-items: center; min-height: 100vh; box-sizing: border-box;">
+<body>
 
-<div style="background: #ffffff; padding: 35px; border-radius: 10px; box-shadow: 0 4px 25px rgba(0,0,0,0.15); width: 100%; max-width: 480px; box-sizing: border-box;">
-    
-    <h2 style="text-align: center; color: #1a237e; margin-top: 0; margin-bottom: 25px; font-size: 24px;">Register New Subject</h2>
-    
-    <?php if(isset($error)) { echo '<p style="color:red; text-align:center; font-weight:bold; margin-bottom:20px;">'.$error.'</p>'; } ?>
-    
-    <form action="add_subject.php" method="POST">
-        
-        <div style="margin-bottom: 18px;">
-            <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #333; font-size: 14px;">Subject Name:</label>
-            <input type="text" name="subject_name" placeholder="E.g., Java Programming" required style="width: 100%; padding: 12px; border: 1px solid #bbb; border-radius: 6px; box-sizing: border-box; font-size: 14px;">
-        </div>
-        
-        <div style="margin-bottom: 18px;">
-            <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #333; font-size: 14px;">Subject Code:</label>
-            <input type="text" name="subject_code" placeholder="E.g., JAVA-301" required style="width: 100%; padding: 12px; border: 1px solid #bbb; border-radius: 6px; box-sizing: border-box; font-size: 14px;">
-        </div>
-        
-        <div style="margin-bottom: 25px;">
-            <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #333; font-size: 14px;">Assigned Class / Semester:</label>
-            <select name="class" required style="width: 100%; padding: 12px; border: 1px solid #bbb; border-radius: 6px; box-sizing: border-box; font-size: 14px; background-color: #fff;">
-                <option value="">-- Select Class --</option>
-                <option value="Semester 1">Semester 1</option>
-                <option value="Semester 2">Semester 2</option>
-                <option value="Semester 3">Semester 3</option>
-                <option value="Semester 4">Semester 4</option>
-            </select>
-        </div>
-        
-        <button type="submit" name="add_subject" style="background: #2196f3; color: #ffffff; padding: 14px; border: none; border-radius: 6px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px; display: block; text-align: center; box-shadow: 0 3px 6px rgba(0,0,0,0.1);">Save Subject</button>
-        
-        <a href="subject.php" style="display: block; text-align: center; margin-top: 20px; text-decoration: none; color: #1a237e; font-size: 14px; font-weight: bold;">← Back to Subjects Directory</a>
-    </form>
+<div class="sidebar">
+    <h2>Alnuur School</h2>
+    <a href="admin_dashboard.php">Dashboard</a>
+    <a href="student.php" style="background: var(--dark-blue);">Manage Students</a>
+    <a href="subject.php">Subjects</a>
+    <a href="add_user.php">Manage Users</a>
+    <a href="marks.php">Add Marks</a>
+    <a href="reports.php">Reports</a>
+    <a href="../logout.php">Log Out</a>
+</div>
+
+<div class="main-content">
+    <div class="container-box">
+        <h2 style="text-align: center; color: var(--primary-blue); margin-top: 0;">Register New Student</h2>
+        <p style="text-align: center; color: #64748b; margin-top: -10px; margin-bottom: 20px;">Fill out the fields below to add a student to the system.</p>
+
+        <form action="save_student.php" method="POST">
+            <div class="form-group">
+                <label>Student ID No:</label>
+                <input type="text" name="student_id" placeholder="E.g., 7890" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Full Name:</label>
+                <input type="text" name="name" placeholder="E.g., Hadia Jama Moumin" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Class / Semester:</label>
+                <select name="class" required>
+                    <option value="">-- Select Class --</option>
+                    <option value="Semester 1">Semester 1</option>
+                    <option value="Semester 2">Semester 2</option>
+                    <option value="Semester 3">Semester 3</option>
+                    <option value="Semester 4">Semester 4</option>
+                </select>
+            </div>
+            
+            <button type="submit" name="submit" class="btn-submit">Save Student</button>
+        </form>
+    </div>
 </div>
 
 </body>

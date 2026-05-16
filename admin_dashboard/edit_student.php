@@ -1,113 +1,86 @@
 <?php
+// edit_student.php - Modernized Edit Script to Match Combined System
 session_start();
-include('conn.php'); 
+include('conn.php');
 
-// Hubi in qofka soo galay uu yahay Admin ama Macallin
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'teacher')) {
     header("Location: ../login.php");
     exit();
 }
 
-$success = null; 
+$success = null;
 $error = null;
 $student = null;
 
-// 1. Soo qabo xogta ardayga la rabo in la edit-gareeyo
-if (isset($_GET['id'])) {
-    $student_id = mysqli_real_escape_string($conn, $_GET['id']);
-    
-    // Baar miiska users ama students midka aad u isticmaasho xogta ardayda
-    $query = mysqli_query($conn, "SELECT * FROM users WHERE id='$student_id' AND role='student'");
-    if(mysqli_num_rows($query) == 0){
-        // Haddii aad miis gooni ah u isticmaasho ardayda:
-        $query = mysqli_query($conn, "SELECT * FROM students WHERE id='$student_id'");
-    }
+// 1. Fetch the existing student data using the ID passed from the URL link
+if (isset($_GET['student_id'])) {
+    $student_id = mysqli_real_escape_string($conn, $_GET['student_id']);
+    $query = mysqli_query($conn, "SELECT * FROM students WHERE student_id = '$student_id'");
     
     if (mysqli_num_rows($query) > 0) {
         $student = mysqli_fetch_assoc($query);
     } else {
-        $error = "Cilad: Ardayga aad raadinayso lagama helin nidaamka sxb!";
+        $error = "Student profile not found in system layers.";
     }
-} else {
-    header("Location: student.php");
-    exit();
 }
 
-// 2. Marka foomka isbeddelka la soo gudbiyo (Update)
+// 2. Process the Form Submission when the user clicks "Update Profile Data"
 if (isset($_POST['update_student'])) {
-    $id = mysqli_real_escape_string($conn, $_POST['student_id']);
-    $email = mysqli_real_escape_string($conn, $_POST['email']);
-    
-    // Baar khaanadaha jira si uusan nidaamku u jabin sxb
-    $col_check = mysqli_query($conn, "SHOW COLUMNS FROM users");
-    $db_cols = [];
-    if($col_check){
-        while($c = mysqli_fetch_assoc($col_check)) { $db_cols[] = $c['Field']; }
-    }
+    $old_student_id = mysqli_real_escape_string($conn, $_POST['old_student_id']);
+    $new_student_id = mysqli_real_escape_string($conn, $_POST['student_id']);
+    $name = mysqli_real_escape_string($conn, $_POST['name']);
+    $class = mysqli_real_escape_string($conn, $_POST['class']);
+    $section = mysqli_real_escape_string($conn, $_POST['section']);
 
-    // Dynamic Update Query
-    $update_fields = [];
-    if (in_array('email', $db_cols)) { $update_fields[] = "email='$email'"; }
-    
-    // Haddii foomkaaga ay ku jiraan khaanado kale sida name ama phone ku dar halkan:
-    if (isset($_POST['name']) && in_array('name', $db_cols)) {
-        $name = mysqli_real_escape_string($conn, $_POST['name']);
-        $update_fields[] = "name='$name'";
-    }
-    if (isset($_POST['username']) && in_array('username', $db_cols)) {
-        $username = mysqli_real_escape_string($conn, $_POST['username']);
-        $update_fields[] = "username='$username'";
-    }
+    // Update query handling the name, class, and your new manual section field safely
+    $sql = "UPDATE students 
+            SET student_id = '$new_student_id', name = '$name', class = '$class', section = '$section' 
+            WHERE student_id = '$old_student_id'";
 
-    if (!empty($update_fields)) {
-        $sql_update = "UPDATE users SET " . implode(', ', $update_fields) . " WHERE id='$id'";
-        
-        if (mysqli_query($conn, $sql_update)) {
-            $success = "Xogta ardayga si guul leh ayaa loo cusboonaysiiyey sxb!";
-            // Dib u soo cusboonaysii xogta shaashadda taala
-            $query = mysqli_query($conn, "SELECT * FROM users WHERE id='$id'");
-            $student = mysqli_fetch_assoc($query);
-        } else {
-            $error = "Cilad ka dhacday update-ka: " . mysqli_error($conn);
-        }
+    if (mysqli_query($conn, $sql)) {
+        // Redirect back to main students panel immediately upon successful database save
+        header("Location: student.php");
+        exit();
     } else {
-        // Haddii ardayda miis kale lagu kaydiyo (students table)
-        $sql_update_student = "UPDATE students SET email='$email' WHERE id='$id'";
-        if (mysqli_query($conn, $sql_update_student)) {
-            $success = "Xogta ardayga si guul leh ayaa loo cusboonaysiiyey sxb!";
-            $query = mysqli_query($conn, "SELECT * FROM students WHERE id='$id'");
-            $student = mysqli_fetch_assoc($query);
-        } else {
-            $error = "Cilad ka dhacday keydinta miiska kale: " . mysqli_error($conn);
-        }
+        $error = "Database Update Error: " . mysqli_error($conn);
     }
 }
 ?>
 
 <!DOCTYPE html>
-<html lang="so">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Edit Student | Alnuur School</title>
+    <title>Edit Student Profile - Alnuur School</title>
     <style>
-        :root { --primary-blue: #1a237e; --dark-blue: #0d145a; --white: #ffffff; --bg-light: #f8f9fa; }
+        :root { 
+            --primary-blue: #1a237e; 
+            --dark-blue: #0d145a; 
+            --white: #ffffff; 
+            --bg-light: #f8f9fa; 
+            --light-blue: #2196f3;
+            --red: #c62828; 
+        }
+        
         body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; background-color: var(--bg-light); min-height: 100vh; }
         
         .sidebar { width: 260px; height: 100vh; background: var(--primary-blue); color: var(--white); position: fixed; }
         .sidebar h2 { text-align: center; padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin: 0; }
-        .sidebar a { display: block; color: var(--white); padding: 15px 25px; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .sidebar a { display: block; color: var(--white); padding: 15px 25px; text-decoration: none; }
         .sidebar a:hover { background: var(--dark-blue); }
         
-        .main-content { margin-left: 260px; padding: 40px; width: calc(100% - 260px); box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
+        .main-content { margin-left: 260px; padding: 40px; width: calc(100% - 260px); box-sizing: border-box; }
+        .container-box { background: var(--white); padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
         
-        .form-box { background: var(--white); padding: 35px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 600px; margin-top: 20px; }
-        .form-group { display: flex; flex-direction: column; margin-bottom: 20px; }
-        .form-group label { margin-bottom: 8px; font-weight: bold; font-size: 14px; color: #333; }
-        .form-group input { padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+        .form-group { display: flex; flex-direction: column; margin-bottom: 15px; }
+        .form-group label { margin-bottom: 5px; font-weight: bold; font-size: 14px; color: #334155; }
+        .form-group input, .form-group select { padding: 11px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background: var(--white); }
         
-        .btn-submit { background: #4caf50; color: white; border: none; padding: 15px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 16px; }
-        .btn-submit:hover { background: #388e3c; }
-        .btn-back { display: block; text-align: center; margin-top: 15px; color: var(--primary-blue); text-decoration: none; font-weight: bold; }
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        .btn { padding: 12px 24px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+        .btn-save { background: var(--primary-blue); color: var(--white); flex: 1; }
+        .btn-cancel { background: #e2e8f0; color: #334155; }
+        .btn:hover { opacity: 0.9; }
     </style>
 </head>
 <body>
@@ -115,49 +88,60 @@ if (isset($_POST['update_student'])) {
 <div class="sidebar">
     <h2>Alnuur School</h2>
     <a href="admin_dashboard.php">Dashboard</a>
-    <a href="student.php">Manage Students</a>
+    <a href="student.php" style="background: var(--dark-blue);">Manage Students</a>
     <a href="subject.php">Subjects</a>
     <a href="add_user.php">Manage Users</a>
     <a href="marks.php">Add Marks</a>
     <a href="reports.php">Reports</a>
-    <a href="../logout.php" style="margin-top: 50px; border-top: 1px solid rgba(255,255,255,0.2);">Log Out</a>
+    <a href="../logout.php">Log Out</a>
 </div>
 
 <div class="main-content">
-    <div class="form-box">
-        <h3 style="color: var(--primary-blue); margin-bottom: 25px; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; text-align: center;">Wax ka beddel Xogta Ardayga (Edit Student)</h3>
-        
-        <?php if($error) { echo '<p style="color:red; font-weight:bold; text-align:center; padding: 10px; background: #ffebee; border-radius: 4px;">'.$error.'</p>'; } ?>
-        <?php if($success) { echo '<p style="color:green; font-weight:bold; text-align:center; padding: 10px; background: #e8f5e9; border-radius: 4px;">'.$success.'</p>'; } ?>
+    <div style="margin-bottom: 30px;">
+        <h2 style="color: var(--primary-blue); margin:0;">Edit Student Profile</h2>
+        <p style="color: #64748b; margin: 5px 0 0 0;">Modify records safely here. Saving will return you to the dashboard panel instantly.</p>
+    </div>
 
-        <?php if($student): ?>
-        <form action="edit_student.php?id=<?php echo $student['id']; ?>" method="POST">
-            <input type="hidden" name="student_id" value="<?php echo $student['id']; ?>">
-            
-            <?php if(isset($student['name'])): ?>
+    <?php if($error) { echo '<p style="color:var(--red); background:#ffebee; padding:12px; border-radius:6px; font-weight:bold;">'.$error.'</p>'; } ?>
+
+    <?php if($student): ?>
+    <div class="container-box" style="max-width: 500px;">
+        <form action="edit_student.php" method="POST">
+            <input type="hidden" name="old_student_id" value="<?php echo htmlspecialchars($student['student_id']); ?>">
+
             <div class="form-group">
-                <label>Magaca Ardayga (Name):</label>
+                <label>Student ID Number:</label>
+                <input type="text" name="student_id" value="<?php echo htmlspecialchars($student['student_id']); ?>" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Full Legal Name:</label>
                 <input type="text" name="name" value="<?php echo htmlspecialchars($student['name']); ?>" required>
             </div>
-            <?php elseif(isset($student['username'])): ?>
+            
             <div class="form-group">
-                <label>Username-ka Ardayga:</label>
-                <input type="text" name="username" value="<?php echo htmlspecialchars($student['username']); ?>" required>
+                <label>Class / Assigned Form:</label>
+                <select name="class" required>
+                    <option value="Form 1" <?php if($student['class'] == 'Form 1') echo 'selected'; ?>>Form 1</option>
+                    <option value="Form 2" <?php if($student['class'] == 'Form 2') echo 'selected'; ?>>Form 2</option>
+                    <option value="Form 3" <?php if($student['class'] == 'Form 3') echo 'selected'; ?>>Form 3</option>
+                    <option value="Form 4" <?php if($student['class'] == 'Form 4') echo 'selected'; ?>>Form 4</option>
+                </select>
             </div>
-            <?php endif; ?>
-
+            
             <div class="form-group">
-                <label>Email-ka Ardayga (Email Address):</label>
-                <input type="email" name="email" value="<?php echo htmlspecialchars($student['email'] ?? ''); ?>" required>
+                <label>Section:</label>
+                <input type="text" name="section" value="<?php echo htmlspecialchars(isset($student['section']) ? $student['section'] : ''); ?>" required>
             </div>
-
-            <button type="submit" name="update_student" class="btn-submit">💾 Update Student Info</button>
+            
+            <div class="btn-group">
+                <button type="submit" name="update_student" class="btn btn-save">Update Profile Data</button>
+                <a href="student.php" class="btn btn-cancel">Cancel</a>
+            </div>
         </form>
-        <?php endif; ?>
-        
-        <a href="student.php" class="btn-back">⬅️ Ku noqo Maareynta Ardayda (Back)</a>
     </div>
+    <?php endif; ?>
 </div>
 
 </body>
-</html>
+</html>s

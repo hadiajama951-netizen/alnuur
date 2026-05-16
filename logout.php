@@ -1,11 +1,10 @@
 <?php
-// 1. Bilow session-ka si PHP u garto qofka raba inuu baxo
+// logout.php
 session_start();
 
-// 2. Tirtir dhamaan xogta gudaha Session-ka ku jirtay (sida user_id iyo role)
+// Destroy all session variables
 $_SESSION = array();
 
-// 3. Haddii nidaamku isticmaalayay Cookies, halkan ayaa lagu tirtiraa
 if (ini_get("session.use_cookies")) {
     $params = session_get_cookie_params();
     setcookie(session_name(), '', time() - 42000,
@@ -14,10 +13,9 @@ if (ini_get("session.use_cookies")) {
     );
 }
 
-// 4. Gebi ahaanba burburi Session-ka
 session_destroy();
 
-// 5. Ku celi qofka bogga Login-ka ee ALNUUR
+// Redirect user back to the login page
 header("Location: login.php");
 exit();
 ?>
