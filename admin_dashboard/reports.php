@@ -1,92 +1,80 @@
-<?php 
+<?php
 include('conn.php'); 
+session_start();
 
-// Query-gan wuxuu isku darayaa dhibcaha arday kasta isagoo xogta ka keenaya saddexda Table
-$query = "SELECT s.student_id, s.name, 
-          SUM(m.score) as total_score, 
-          COUNT(m.subject_id) as subjects_count,
-          AVG(m.score) as average_score
-          FROM students s
-          LEFT JOIN marks m ON s.student_id = m.student_id
-          GROUP BY s.student_id, s.name";
+// Amniga
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+    header("Location: ../login.php");
+    exit();
+}
+
+// SQL Query-ga la saxay (Halkan ayay cilladdu ahayd)
+$query = "SELECT u.student_id_code, u.email, m.attendance, m.assignment, m.mid_exam, m.final_exam, 
+          (m.attendance + m.assignment + m.mid_exam + m.final_exam) as total_score 
+          FROM users u 
+          JOIN marks m ON u.id = m.student_id 
+          WHERE u.role = 'student'";
 
 $result = mysqli_query($conn, $query);
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="so">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Reports - Alnuur System</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Reports | Alnuur School</title>
     <style>
-        .report-container { padding: 30px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .report-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-        .report-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .report-table th { background: #1a237e; color: white; padding: 15px; text-align: left; }
-        .report-table td { padding: 12px; border-bottom: 1px solid #eee; }
-        .badge { padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 12px; }
-        .pass { background: #e8f5e9; color: #2e7d32; }
-        .fail { background: #ffebee; color: #c62828; }
-        .no-marks { background: #f5f5f5; color: #757575; }
-        .print-btn { 
-            background: #4527a0; color: white; border: none; padding: 10px 25px; 
-            border-radius: 5px; cursor: pointer; float: right; margin-bottom: 20px;
-        }
-        @media print {
-            .sidebar, .print-btn { display: none; }
-            .report-container { padding: 0; }
-        }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; margin: 0; display: flex; }
+        .sidebar { width: 260px; height: 100vh; background: #1a237e; color: white; position: fixed; }
+        .sidebar a { display: block; color: white; padding: 15px; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar a:hover { background: #0d145a; }
+        .main-content { margin-left: 260px; padding: 40px; width: 100%; }
+        table { width: 100%; border-collapse: collapse; background: white; margin-top: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background: #1a237e; color: white; }
+        tr:nth-child(even) { background: #f2f2f2; }
     </style>
 </head>
 <body>
-    <div class="report-container">
-        <button class="print-btn" onclick="window.print()">🖨️ Print Report</button>
-        <h2>📊 Student Academic Performance</h2>
-        <p>Warbixinta Guud ee Ardayda Alnuur System</p>
 
-        <div class="report-card">
-            <table class="report-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Student Name</th>
-                        <th>Total Score</th>
-                        <th>Subjects</th>
-                        <th>Average (%)</th>
-                        <th>Result Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php while($row = mysqli_fetch_assoc($result)): ?>
-                    <tr>
-                        <td><strong><?php echo $row['student_id']; ?></strong></td>
-                        <td><?php echo $row['name']; ?></td>
-                        <td><?php echo $row['total_score'] ?? '0'; ?></td>
-                        <td><?php echo $row['subjects_count']; ?></td>
-                        <td>
-                            <?php 
-                            $avg = $row['average_score'];
-                            echo $avg ? number_format($avg, 1) . '%' : '0%'; 
-                            ?>
-                        </td>
-                        <td>
-                            <?php 
-                            if ($row['subjects_count'] == 0) {
-                                echo '<span class="badge no-marks">Ma fadhiisan</span>';
-                            } elseif ($avg >= 50) {
-                                echo '<span class="badge pass">Gudbay (Pass)</span>';
-                            } else {
-                                echo '<span class="badge fail">Haray (Fail)</span>';
-                            }
-                            ?>
-                        </td>
-                    </tr>
-                    <?php endwhile; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
+<div class="sidebar">
+    <h2 style="text-align: center;">Alnuur School</h2>
+    <a href="admin_dashboard.php">Dashboard</a>
+    <a href="student.php">Manage Students</a>
+    <a href="marks.php">Add Marks</a>
+    <a href="reports.php">Reports</a>
+    <a href="../logout.php">Log Out</a>
+</div>
+
+<div class="main-content">
+    <h1>Warbixinta Natiijooyinka Ardayda</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Student ID</th>
+                <th>Email/Name</th>
+                <th>Att.</th>
+                <th>Ass.</th>
+                <th>Mid</th>
+                <th>Final</th>
+                <th>Total (100)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php while($row = mysqli_fetch_assoc($result)) { ?>
+            <tr>
+                <td><?php echo $row['student_id_code']; ?></td>
+                <td><?php echo $row['email']; ?></td>
+                <td><?php echo $row['attendance']; ?></td>
+                <td><?php echo $row['assignment']; ?></td>
+                <td><?php echo $row['mid_exam']; ?></td>
+                <td><?php echo $row['final_exam']; ?></td>
+                <td style="font-weight:bold; color:#1a237e;"><?php echo $row['total_score']; ?></td>
+            </tr>
+            <?php } ?>
+        </tbody>
+    </table>
+</div>
+
 </body>
 </html>
