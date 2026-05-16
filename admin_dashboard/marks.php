@@ -2,7 +2,6 @@
 session_start();
 include('conn.php'); 
 
-// Hubi in qofka soo galay uu yahay Admin ama Macallin
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'teacher')) {
     header("Location: ../login.php");
     exit();
@@ -11,136 +10,129 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION[
 $success = null; 
 $error = null;
 
-// Isbeddelka marka foomka la soo gudbiyo (Keydi Natiijada)
+// MARKA LA RIIXO SAVE MARKS
 if (isset($_POST['save_marks'])) {
     $student_email = mysqli_real_escape_string($conn, $_POST['student_email']);
-    $subject_name  = mysqli_real_escape_string($conn, $_POST['subject']);
-    $attendance    = floatval($_POST['attendance']);
-    $assignment    = floatval($_POST['assignment']);
-    $mid           = floatval($_POST['mid']);
-    $final         = floatval($_POST['final']);
+    $subject_input = mysqli_real_escape_string($conn, $_POST['subject']);
     
-    // Total-ka xisaabi sxb
-    $total = $attendance + $assignment + $mid + $final;
+    $attendance = isset($_POST['attendance']) ? floatval($_POST['attendance']) : 0;
+    $assignment = isset($_POST['assignment']) ? floatval($_POST['assignment']) : 0;
+    $mid_exam   = isset($_POST['mid']) ? floatval($_POST['mid']) : 0;
+    $final_exam = isset($_POST['final']) ? floatval($_POST['final']) : 0;
 
-    // 1. HUBI ARDAYGA (STUDENT FOREIGN KEY CHECK)
-    $user_check = mysqli_query($conn, "SELECT id FROM users WHERE email='$student_email'");
-    
-    // 2. HUBI MAADDADA (SUBJECT FOREIGN KEY CHECK) - Tani waxay soo saartaa ID-ga rasmiga ah ee maaddada sxb
-    $sub_check = mysqli_query($conn, "SELECT id FROM subjects WHERE subject_name='$subject_name'");
+    $student_id = 0;
 
-    if (mysqli_num_rows($user_check) == 0) {
-        $error = "Cilad: Email-ka ardayga aad gelisay nidaamka kama jiro sxb! Fadlan hubi email-ka.";
-    } elseif (mysqli_num_rows($sub_check) == 0) {
-        $error = "Cilad: Maaddada aad dooratay lagama helin database-ka sxb!";
+    // STEP 1: Si looga baaqsado "Unknown column 'email'", waxaynu marka hore hubinaynaa khaanadaha miiska 'users'
+    $check_users_cols = mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'email'");
+    if (mysqli_num_rows($check_users_cols) > 0) {
+        $user_query = mysqli_query($conn, "SELECT id FROM users WHERE email = '$student_email'");
     } else {
-        // La soo bax ID-yada rasmiga ah si looga badbaado Foreign Key Failure
-        $user_data = mysqli_fetch_assoc($user_check);
-        $student_id = $user_data['id'];
-
-        $sub_data = mysqli_fetch_assoc($sub_check);
-        $subject_id = $sub_data['id'];
-
-        // Baar khaanadaha rasmiga ah ee miiskaaga marks si loo ogaado qaab-dhismeedka rasmiga ah
-        $col_check = mysqli_query($conn, "SHOW COLUMNS FROM marks");
-        $db_cols = [];
-        while($c = mysqli_fetch_assoc($col_check)) { $db_cols[] = $c['Field']; }
-
-        $fields = [];
-        $values = [];
-
-        // Hubi habka uu u kaydiyo Ardayga (ID ama Email)
-        if (in_array('student_id', $db_cols)) { $fields[] = 'student_id'; $values[] = "'$student_id'"; }
-        if (in_array('student_email', $db_cols)) { $fields[] = 'student_email'; $values[] = "'$student_email'"; }
-        elseif (in_array('email', $db_cols)) { $fields[] = 'email'; $values[] = "'$student_email'"; }
-
-        // Hubi habka uu u kaydiyo Maaddada (subject_id ama subject_name) - XALLINTA CILADDA CUSUB!
-        if (in_array('subject_id', $db_cols)) { $fields[] = 'subject_id'; $values[] = "'$subject_id'"; }
-        if (in_array('subject', $db_cols)) { $fields[] = 'subject'; $values[] = "'$subject_name'"; }
-        elseif (in_array('subject_name', $db_cols)) { $fields[] = 'subject_name'; $values[] = "'$subject_name'"; }
-
-        // Dhibcaha kale ee caadiga ah
-        if (in_array('attendance', $db_cols)) { $fields[] = 'attendance'; $values[] = "'$attendance'"; }
-        if (in_array('assignment', $db_cols)) { $fields[] = 'assignment'; $values[] = "'$assignment'"; }
-        
-        if (in_array('mid', $db_cols)) { $fields[] = 'mid'; $values[] = "'$mid'"; }
-        elseif (in_array('mid_exam', $db_cols)) { $fields[] = 'mid_exam'; $values[] = "'$mid'"; }
-
-        if (in_array('final', $db_cols)) { $fields[] = 'final'; $values[] = "'$final'"; }
-        elseif (in_array('final_exam', $db_cols)) { $fields[] = 'final_exam'; $values[] = "'$final'"; }
-        elseif (in_array('final_marks', $db_cols)) { $fields[] = 'final_marks'; $values[] = "'$final'"; }
-
-        if (in_array('total', $db_cols)) { $fields[] = 'total'; $values[] = "'$total'"; }
-
-        // Hadda fuli query-ga isagoo ammaan ah gabi ahaanba
-        if (!empty($fields)) {
-            $sql_query = "INSERT INTO marks (" . implode(', ', $fields) . ") VALUES (" . implode(', ', $values) . ")";
-            if (mysqli_query($conn, $sql_query)) {
-                $success = "Natiijada si guul leh ayaa loo keydiyey sxb!";
-            } else {
-                $error = "Cilad ka dhacday keydinta: " . mysqli_error($conn);
-            }
+        // Haddii miiska users uu leeyahay student_email ama username
+        $check_users_sub = mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'student_email'");
+        if (mysqli_num_rows($check_users_sub) > 0) {
+            $user_query = mysqli_query($conn, "SELECT id FROM users WHERE student_email = '$student_email'");
         } else {
-            $error = "Database-kaaga miiska 'marks' qaab-dhismeedkiisa lama aqoonsan karo sxb.";
+            $user_query = mysqli_query($conn, "SELECT id FROM users WHERE username = '$student_email'");
+        }
+    }
+
+    // Haddii laga helay miiska users
+    if($user_query && mysqli_num_rows($user_query) > 0) {
+        $u_row = mysqli_fetch_assoc($user_query);
+        $student_id = $u_row['id'];
+    } else {
+        // Haddii laga waayo users, ka raadi miiska 'students'
+        $check_stud_cols = mysqli_query($conn, "SHOW COLUMNS FROM students LIKE 'student_email'");
+        if (mysqli_num_rows($check_stud_cols) > 0) {
+            $st_query = mysqli_query($conn, "SELECT id FROM students WHERE student_email = '$student_email'");
+        } else {
+            $st_query = mysqli_query($conn, "SELECT id FROM students WHERE email = '$student_email'");
+        }
+
+        if($st_query && mysqli_num_rows($st_query) > 0) {
+            $s_row = mysqli_fetch_assoc($st_query);
+            $student_id = $s_row['id'];
+        }
+    }
+
+    // STEP 2: Soo saar Subject ID adigoo isticmaalaya khaanadda saxda ah ee 'subject_name'
+    $subject_id = 0;
+    $sub_query = mysqli_query($conn, "SELECT id FROM subjects WHERE subject_name = '$subject_input'");
+    if($sub_query && mysqli_num_rows($sub_query) > 0) {
+        $sub_row = mysqli_fetch_assoc($sub_query);
+        $subject_id = $sub_row['id'];
+    }
+
+    // STEP 3: Haddii la helay Student iyo Subject, hadda u geli nidaamka si nabad ah
+    if ($student_id > 0 && $subject_id > 0) {
+        // Maadaama total_marks uu yahay STORED GENERATED database-kaaga dhexdiisa, halkan kuma dhex dareyno INSERT-ka
+        $sql_insert = "INSERT INTO marks (student_id, subject_id, attendance, assignment, mid_exam, final_exam) 
+                       VALUES ('$student_id', '$subject_id', '$attendance', '$assignment', '$mid_exam', '$final_exam')";
+        
+        if (mysqli_query($conn, $sql_insert)) {
+            $success = "Dhibcihii ardayga si guul leh ayaa loo kaydiyey sxb!";
+        } else {
+            $error = "Cilad kaydinta ah: " . mysqli_error($conn);
+        }
+    } else {
+        if ($student_id == 0) {
+            $error = "Cilad: Email-kan ($student_email) kama jiro miisaska Users ama Students!";
+        } else {
+            $error = "Cilad: Maaddadan ($subject_input) kama jirto miiska Subjects!";
         }
     }
 }
 
-// Soo saar dhibcihii ugu dambeeyey (Waxaan ku darnay JOIN si magacyada ardayda iyo maaddooyinka loogu soo saaro si sax ah miiska hoose)
-$marks_query = "SELECT m.*, u.email as user_email, s.subject_name as sub_title 
-                FROM marks m 
-                LEFT JOIN users u ON m.student_id = u.id 
-                LEFT JOIN subjects s ON m.subject_id = s.id 
-                ORDER BY m.id DESC LIMIT 10";
-$marks_result = mysqli_query($conn, $marks_query);
-
-// Haddii ay cilad ku dhacdo JOIN-ka kore, u isticmaal nidaamka fudud si uusan nidaamku u istaagin
-if (!$marks_result) {
-    $marks_result = mysqli_query($conn, "SELECT * FROM marks ORDER BY id DESC LIMIT 10");
-}
+// Soo jiid xogta si loogu muujiyo miiska hoose (View Marks)
+$query_text = "SELECT m.id AS mark_id, m.mid_exam, m.final_exam, m.total_marks,
+               COALESCE(u.email, 'Unknown Student') AS student_email, 
+               COALESCE(s.subject_name, 'Unknown Subject') AS subject_name
+               FROM marks m
+               LEFT JOIN users u ON m.student_id = u.id
+               LEFT JOIN subjects s ON m.subject_id = s.id";
+$marks_query = mysqli_query($conn, $query_text);
 ?>
 
 <!DOCTYPE html>
 <html lang="so">
 <head>
     <meta charset="UTF-8">
-    <title>Student Marks Control Panel | Alnuur School</title>
+    <title>Student Marks Control Panel</title>
     <style>
-        :root { --primary-blue: #1a237e; --dark-blue: #0d145a; --white: #ffffff; --bg-light: #f8f9fa; }
+        :root { --primary-blue: #1a237e; --dark-blue: #0d145a; --white: #ffffff; --bg-light: #f8f9fa; --green: #2e7d32; --red: #c62828; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; background-color: var(--bg-light); min-height: 100vh; }
-        
         .sidebar { width: 260px; height: 100vh; background: var(--primary-blue); color: var(--white); position: fixed; }
         .sidebar h2 { text-align: center; padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin: 0; }
-        .sidebar a { display: block; color: var(--white); padding: 15px 25px; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .sidebar a { display: block; color: var(--white); padding: 15px 25px; text-decoration: none; }
         .sidebar a:hover { background: var(--dark-blue); }
-        
         .main-content { margin-left: 260px; padding: 40px; width: calc(100% - 260px); box-sizing: border-box; }
         
-        .control-center { display: flex; justify-content: center; gap: 20px; margin-top: 20px; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
-        .action-btn { font-family: 'Segoe UI', sans-serif; font-size: 15px; font-weight: bold; border: none; padding: 16px 30px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 10px; }
+        .top-nav { display: flex; gap: 15px; justify-content: center; margin-bottom: 30px; }
+        .nav-btn { padding: 14px 24px; border-radius: 6px; font-weight: bold; cursor: pointer; border: 2px solid transparent; }
+        .btn-blue { background: #2196f3; color: white; }
+        .btn-outline-blue { background: white; color: var(--primary-blue); border: 2px solid var(--primary-blue); }
+        .btn-red { background: var(--red); color: white; }
         
-        .btn-blue { background: #2196f3; color: white; } .btn-blue:hover { background: #1976d2; transform: translateY(-2px); }
-        .btn-white { background: #ffffff; color: #1a237e; border: 2px solid #1a237e; } .btn-white:hover { background: #f4f5fa; transform: translateY(-2px); }
-        .btn-dark-blue { background: #1a237e; color: white; } .btn-dark-blue:hover { background: #0d145a; transform: translateY(-2px); }
-        
-        .form-container { display: none; justify-content: center; margin-bottom: 40px; animation: fadeIn 0.4s ease; }
-        .form-box { background: var(--white); padding: 35px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 800px; }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }
+        .content-panel { background: var(--white); padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 30px; display: none; }
+        .active-panel { display: block; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
         .form-group { display: flex; flex-direction: column; }
-        .form-group label { margin-bottom: 8px; font-weight: bold; font-size: 14px; color: #333; }
-        .form-group input, .form-group select { padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+        .form-group label { margin-bottom: 8px; font-weight: bold; font-size: 14px; }
+        .form-group input { padding: 12px; border: 1px solid #ccc; border-radius: 6px; }
         
-        .btn-submit { background: var(--primary-blue); color: white; border: none; padding: 15px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 10px; }
-        .btn-submit:hover { background: var(--dark-blue); }
-        
-        .table-section { background: var(--white); padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-top: 15px; display: none; animation: fadeIn 0.4s ease; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 14px; border-bottom: 1px solid #e0e0e0; text-align: left; font-size: 15px; }
-        th { background: #f5f5f5; color: #333; }
-        .badge-total { background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 4px; font-weight: bold; }
-        
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
+        th, td { padding: 14px; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 14px; }
+        th { background: #f8f9fa; color: #475569; font-weight: bold; }
+        .badge-total { background: #e8f5e9; color: var(--green); padding: 4px 10px; border-radius: 4px; font-weight: bold; }
+        .btn-action { text-decoration: none; font-weight: bold; padding: 4px 8px; border-radius: 4px; }
     </style>
+    <script>
+        function switchPanel(panelId) {
+            document.getElementById('add-marks-panel').style.display = 'none';
+            document.getElementById('view-marks-panel').style.display = 'none';
+            if(panelId !== '') { document.getElementById(panelId).style.display = 'block'; }
+        }
+    </script>
 </head>
 <body>
 
@@ -152,69 +144,58 @@ if (!$marks_result) {
     <a href="add_user.php">Manage Users</a>
     <a href="marks.php">Add Marks</a>
     <a href="reports.php">Reports</a>
-    <a href="../logout.php" style="margin-top: 50px; border-top: 1px solid rgba(255,255,255,0.2);">Log Out</a>
+    <a href="../logout.php">Log Out</a>
 </div>
 
 <div class="main-content">
-    <h2 style="color: var(--primary-blue); margin-bottom: 5px; text-align: center;">Student Marks Control Panel</h2>
-    <p style="text-align:center; color: #666; margin-bottom: 30px;">Gali ama ka tiri natiijooyinka imtixaanka ardayda sxb.</p>
+    <div style="text-align: center; margin-bottom: 25px;">
+        <h2 style="color: var(--primary-blue);">Student Marks Control Panel</h2>
+        <p style="color: #666;">Gali ama ka tiri natiijooyinka imtikaanka ardayda sxb.</p>
+    </div>
     
-    <div class="control-center">
-        <button class="action-btn btn-blue" onclick="toggleSection('formSection')">➕ Add Marks</button>
-        <button class="action-btn btn-white" onclick="toggleSection('tableSection')">📊 View Marks</button>
-        <button class="action-btn btn-dark-blue" onclick="closeAllSections()">✖ Close View</button>
+    <div class="top-nav">
+        <button class="nav-btn btn-blue" onclick="switchPanel('add-marks-panel')">➕ Add Marks</button>
+        <button class="nav-btn btn-outline-blue" onclick="switchPanel('view-marks-panel')">📊 View Marks</button>
+        <button class="nav-btn btn-red" onclick="switchPanel('')">❌ Close View</button>
     </div>
+    
+    <?php if($error) { echo '<p style="color:var(--red); background:#ffebee; padding:12px; border-radius:5px; text-align:center; font-weight:bold;">'.$error.'</p>'; } ?>
+    <?php if($success) { echo '<p style="color:var(--green); background:#e8f5e9; padding:12px; border-radius:5px; text-align:center; font-weight:bold;">'.$success.'</p>'; } ?>
 
-    <div id="formSection" class="form-container" <?php if(isset($error) || isset($success)) { echo 'style="display:flex;"'; } ?>>
-        <div class="form-box">
-            <h3 style="color: var(--primary-blue); margin-bottom: 25px; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px;">Gali Natiijada Cusub (Add Student Marks)</h3>
-            
-            <?php if($error) { echo '<p style="color:red; font-weight:bold; text-align:center; padding: 10px; background: #ffebee; border-radius: 4px;">'.$error.'</p>'; } ?>
-            <?php if($success) { echo '<p style="color:green; font-weight:bold; text-align:center; padding: 10px; background: #e8f5e9; border-radius: 4px;">'.$success.'</p>'; } ?>
-
-            <form action="marks.php" method="POST">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>Student Email Address:</label>
-                        <input type="email" name="student_email" placeholder="e.g. raxma@gmail.com" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Maaddada (Subject):</label>
-                        <select name="subject" required>
-                            <option value="">-- Dooro Maaddada --</option>
-                            <?php 
-                            $sub_q = mysqli_query($conn, "SELECT subject_name FROM subjects");
-                            if($sub_q) {
-                                while($s = mysqli_fetch_assoc($sub_q)) {
-                                    echo "<option value='".htmlspecialchars($s['subject_name'])."'>".htmlspecialchars($s['subject_name'])."</option>";
-                                }
-                            }
-                            ?>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Attendance (10):</label>
-                        <input type="number" step="0.01" name="attendance" min="0" max="10" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Assignment (10):</label>
-                        <input type="number" step="0.01" name="assignment" min="0" max="10" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Mid Exam (30):</label>
-                        <input type="number" step="0.01" name="mid" min="0" max="30" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Final Exam (50):</label>
-                        <input type="number" step="0.01" name="final" min="0" max="50" required>
-                    </div>
+    <div id="add-marks-panel" class="content-panel">
+        <h3>Gali Dhibco Cusub</h3>
+        <form action="marks.php" method="POST">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Student Email:</label>
+                    <input type="email" name="student_email" placeholder="e.g. raxma@gmail.com" required>
                 </div>
-                <button type="submit" name="save_marks" class="btn-submit">Keydi Natiijada</button>
-            </form>
-        </div>
+                <div class="form-group">
+                    <label>Subject Name:</label>
+                    <input type="text" name="subject" placeholder="e.g. Physics" required>
+                </div>
+                <div class="form-group">
+                    <label>Assignment:</label>
+                    <input type="number" step="0.01" name="assignment" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Attendance:</label>
+                    <input type="number" step="0.01" name="attendance" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Mid Exam:</label>
+                    <input type="number" step="0.01" name="mid" value="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Final Exam:</label>
+                    <input type="number" step="0.01" name="final" value="0" required>
+                </div>
+            </div>
+            <button type="submit" name="save_marks" style="background: #2196f3; color: white; border: none; padding: 12px 24px; margin-top: 15px; border-radius: 6px; cursor: pointer; font-weight: bold;">💾 Save Marks</button>
+        </form>
     </div>
 
-    <div id="tableSection" class="table-section">
+    <div id="view-marks-panel" class="content-panel active-panel">
         <h3>Dhibcihii Ugu Dambeeyey (Recent Marks)</h3>
         <table>
             <thead>
@@ -224,48 +205,30 @@ if (!$marks_result) {
                     <th>Mid</th>
                     <th>Final</th>
                     <th>Total</th>
+                    <th style="text-align: center;">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <?php 
-                if($marks_result && mysqli_num_rows($marks_result) > 0) { 
-                    while($row = mysqli_fetch_assoc($marks_result)) { ?>
+                if($marks_query && mysqli_num_rows($marks_query) > 0) {
+                    while($row = mysqli_fetch_assoc($marks_query)) { 
+                    ?>
                     <tr>
-                        <td>
-                            <?php 
-                            if(isset($row['user_email'])) { echo htmlspecialchars($row['user_email']); }
-                            elseif(isset($row['student_email'])) { echo htmlspecialchars($row['student_email']); }
-                            else { echo "Student ID: " . htmlspecialchars($row['student_id'] ?? 'N/A'); }
-                            ?>
+                        <td><?php echo htmlspecialchars($row['student_email']); ?></td>
+                        <td><?php echo htmlspecialchars($row['subject_name']); ?></td>
+                        <td><?php echo htmlspecialchars(floatval($row['mid_exam'])); ?></td>
+                        <td><?php echo htmlspecialchars(floatval($row['final_exam'])); ?></td>
+                        <td><span class="badge-total"><?php echo htmlspecialchars(floatval($row['total_marks'])); ?></span></td>
+                        <td style="text-align: center;">
+                            <a href="edit_marks.php?id=<?php echo $row['mark_id']; ?>" class="btn-action" style="color: #2196f3;">✏️ Edit</a> | 
+                            <a href="delete_marks.php?id=<?php echo $row['mark_id']; ?>" class="btn-action" style="color: #f44336;" onclick="return confirm('Ma hubaalbaa sxb?');">🗑️ Delete</a>
                         </td>
-                        <td>
-                            <?php 
-                            if(isset($row['sub_title'])) { echo htmlspecialchars($row['sub_title']); }
-                            elseif(isset($row['subject'])) { echo htmlspecialchars($row['subject']); }
-                            else { echo "Subject ID: " . htmlspecialchars($row['subject_id'] ?? 'N/A'); }
-                            ?>
-                        </td>
-                        <td><?php echo isset($row['mid']) ? htmlspecialchars($row['mid']) : (isset($row['mid_exam']) ? htmlspecialchars($row['mid_exam']) : '0'); ?></td>
-                        <td><?php echo isset($row['final']) ? htmlspecialchars($row['final']) : (isset($row['final_exam']) ? htmlspecialchars($row['final_exam']) : '0'); ?></td>
-                        <td><span class="badge-total"><?php echo isset($row['total']) ? htmlspecialchars($row['total']) : '0'; ?></span></td>
                     </tr>
-                <?php } } else { echo "<tr><td colspan='5' style='text-align:center;'>Weli wax dhibco ah lama keydin.</td></tr>"; } ?>
+                <?php } } else { echo "<tr><td colspan='6' style='text-align:center; padding: 25px;'>Weli wax dhibco ah lagama helin kaydka.</td></tr>"; } ?>
             </tbody>
         </table>
     </div>
 </div>
 
-<script>
-function toggleSection(sectionId) {
-    document.getElementById('formSection').style.display = 'none';
-    document.getElementById('tableSection').style.display = 'none';
-    var target = document.getElementById(sectionId);
-    if(sectionId === 'formSection') { target.style.display = 'flex'; } else { target.style.display = 'block'; }
-}
-function closeAllSections() {
-    document.getElementById('formSection').style.display = 'none';
-    document.getElementById('tableSection').style.display = 'none';
-}
-</script>
 </body>
 </html>
