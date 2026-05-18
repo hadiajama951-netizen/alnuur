@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 06, 2026 at 01:19 AM
+-- Generation Time: May 18, 2026 at 05:51 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -41,7 +41,40 @@ CREATE TABLE `students` (
 
 INSERT INTO `students` (`id`, `student_id`, `name`, `class`, `created_at`) VALUES
 (1, '16977', 'CABDIFATAAX NUUR XUSEEN', 'Form 4B', '2026-05-05 21:55:12'),
-(2, '16970', 'muuse', 'Form 4B', '2026-05-05 22:11:36');
+(2, '16970', 'muuse', 'Form 4B', '2026-05-05 22:11:36'),
+(4, '88', 'CABDIFATAAX NUUR XUSEEN', 'Form 4A', '2026-05-06 07:32:41');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `student_marks`
+--
+
+CREATE TABLE `student_marks` (
+  `id` int(11) NOT NULL,
+  `roll_no` varchar(50) NOT NULL,
+  `full_name` varchar(255) NOT NULL,
+  `class` varchar(50) NOT NULL,
+  `math` int(11) DEFAULT 0,
+  `english` int(11) DEFAULT 0,
+  `science` int(11) DEFAULT 0,
+  `somali` int(11) DEFAULT 0,
+  `history` int(11) DEFAULT 0,
+  `geography` int(11) DEFAULT 0,
+  `arabic` int(11) DEFAULT 0,
+  `islamic` int(11) DEFAULT 0,
+  `chemistry` int(11) DEFAULT 0,
+  `physics` int(11) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `student_marks`
+--
+
+INSERT INTO `student_marks` (`id`, `roll_no`, `full_name`, `class`, `math`, `english`, `science`, `somali`, `history`, `geography`, `arabic`, `islamic`, `chemistry`, `physics`, `created_at`) VALUES
+(9, '001', 'abdinasir', 'Form 4B', 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, '2026-05-18 15:15:55'),
+(10, '002', 'nimco', 'Form 4B', 50, 100, 100, 90, 80, 90, 70, 100, 100, 100, '2026-05-18 15:44:55');
 
 -- --------------------------------------------------------
 
@@ -82,6 +115,12 @@ ALTER TABLE `students`
   ADD UNIQUE KEY `student_id` (`student_id`);
 
 --
+-- Indexes for table `student_marks`
+--
+ALTER TABLE `student_marks`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
@@ -96,7 +135,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `students`
 --
 ALTER TABLE `students`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT for table `student_marks`
+--
+ALTER TABLE `student_marks`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `users`

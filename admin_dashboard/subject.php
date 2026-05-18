@@ -1,113 +1,190 @@
-<?php
-// subject.php
-session_start();
-include('conn.php');
-
-if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'teacher')) {
-    header("Location: ../login.php");
-    exit();
-}
-
-$success = null;
-$error = null;
-
-// Handle Adding a Subject
-if (isset($_POST['add_subject'])) {
-    $subject_name = mysqli_real_escape_string($conn, $_POST['subject_name']);
-    $class = mysqli_real_escape_string($conn, $_POST['class']);
-
-    $sql = "INSERT INTO subjects (subject_name, class) VALUES ('$subject_name', '$class')";
-    if (mysqli_query($conn, $sql)) {
-        $success = "Subject added successfully!";
-    } else {
-        $error = "Error adding subject: " . mysqli_error($conn);
-    }
-}
-
-// Fetch existing subjects
-$subjects_res = mysqli_query($conn, "SELECT * FROM subjects ORDER BY id DESC");
-?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Manage Subjects - Alnuur School</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPMS - Manage Subjects</title>
+    <link rel="stylesheet" href="style.css">
     <style>
-        :root { --primary-blue: #1a237e; --dark-blue: #0d145a; --white: #ffffff; --bg-light: #f8f9fa; --green: #2e7d32; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; background-color: var(--bg-light); min-height: 100vh; }
-        .sidebar { width: 260px; height: 100vh; background: var(--primary-blue); color: var(--white); position: fixed; }
-        .sidebar h2 { text-align: center; padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin: 0; }
-        .sidebar a { display: block; color: var(--white); padding: 15px 25px; text-decoration: none; }
-        .sidebar a:hover { background: var(--dark-blue); }
-        .main-content { margin-left: 260px; padding: 40px; width: calc(100% - 260px); box-sizing: border-box; }
-        .container-box { background: var(--white); padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 30px; }
-        .form-group { display: flex; flex-direction: column; margin-bottom: 15px; }
-        .form-group label { margin-bottom: 5px; font-weight: bold; }
-        .form-group input, .form-group select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
-        .btn-submit { background: #2196f3; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: left; }
-        th { background: #f8f9fa; }
+        /* Qurxinta gaarka ah ee Table-ka Madooyinka */
+        .subject-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 12px;
+            margin-top: 10px;
+        }
+
+        .subject-table thead tr {
+            background-color: #1a237e; /* Dark Blue */
+            color: rgb(0, 0, 0);
+        }
+
+        .subject-table th {
+            padding: 15px;
+            text-align: left;
+            text-transform: uppercase;
+            font-size: 13px;
+        }
+
+        .subject-table th:first-child { border-radius: 8px 0 0 8px; }
+        .subject-table th:last-child { border-radius: 0 8px 8px 0; }
+
+        .subject-table tbody tr {
+            background-color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: 0.3s;
+        }
+
+        .subject-table tbody tr:hover {
+            transform: translateY(-2px);
+            background-color: #f0f3ff;
+        }
+
+        .subject-table td {
+            padding: 15px;
+            border-top: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+        }
+
+        .subject-table td:first-child { border-left: 1px solid #eee; border-radius: 8px 0 0 8px; }
+        .subject-table td:last-child { border-right: 1px solid #eee; border-radius: 0 8px 8px 0; }
+
+        /* Badhamada Edit & Delete */
+        .action-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-edit {
+            background-color: #2196f3;
+            color: white;
+            padding: 7px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .btn-delete {
+            background-color: #f44336;
+            color: white;
+            padding: 7px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .btn-save {
+            background-color: #1a237e;
+            color: white;
+            padding: 10px 25px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
-<div class="sidebar">
-    <h2>Alnuur School</h2>
-    <a href="admin_dashboard.php">Dashboard</a>
-    <a href="student.php">Manage Students</a>
-    <a href="subject.php" style="background: var(--dark-blue);">Subjects</a>
-    <a href="add_user.php">Manage Users</a>
-    <a href="marks.php">Add Marks</a>
-    <a href="reports.php">Reports</a>
-    <a href="../logout.php">Log Out</a>
-</div>
+    <div class="app">
+        <!-- Sidebar: Wuxuu u taagan yahay sidii aad u haysatay -->
+        <aside class="sidebar">
+            <div class="brand">SPMS</div>
+            <nav class="side-nav">
+                <a class="nav-item" href="admin_dashboard.php">🏠 Dashboard</a>
+                <a class="nav-item" href="student.php">👤 Students</a>
+                <a class="nav-item active" href="subjects.php">📚 Subjects</a>
+                <a class="nav-item" href="marks.php">📝 Marks</a>
+                <a class="nav-item" href="report.php">📊 Reports</a>
+                <a class="nav-item" href="user.php">⚙️ Users</a>
+                <a class="nav-item" href="#" style="margin-top: 50px;">🚪 Logout</a>
+            </nav>
+        </aside>
 
-<div class="main-content">
-    <?php if($success) echo '<p style="color:var(--green);">'.$success.'</p>'; ?>
-    
-    <div class="container-box">
-        <h3>📚 Add New Subject</h3>
-        <form action="subject.php" method="POST">
-            <div class="form-group">
-                <label>Subject Name:</label>
-                <input type="text" name="subject_name" required>
+        <main class="main">
+            <header class="topbar">
+                <div class="burger">☰</div>
+                <div class="user-profile" style="display: flex; align-items: center; gap: 10px;">
+                    <img src="https://via.placeholder.com/35" style="border-radius: 50%;" alt="Admin">
+                    <span>Admin ▼</span>
+                </div>
+            </header>
+
+            <div class="content">
+                <h2 style="margin-top: 0; color: #1a237e;">Subject Management</h2>
+                
+                <div class="grid-2">
+                    <!-- Bidix: Foomka lagu daro Maadada -->
+                    <div class="panel">
+                        <h4 style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">Add New Subject</h4>
+                        <form action="save_subject.php" method="POST">
+                           
+                            
+                            <div class="form-group" style="margin-bottom: 15px;">
+                                <label style="display:block; margin-bottom:5px; font-weight:600;">Subject Code</label>
+                                <input type="text" name="subject_code" placeholder="e.g. MATH101" required style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px;">
+                            </div>
+                             <div class="form-group" style="margin-bottom: 15px;">
+                                <label style="display:block; margin-bottom:5px; font-weight:600;">Subject Name</label>
+                                <input type="text" name="subject_name" placeholder="e.g. Mathematics" required style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px;">
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 20px;">
+                                <label style="display:block; margin-bottom:5px; font-weight:600;">Teacher</label>
+                                <select name="dept" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:5px;">
+                                    <option value="Science">axmed</option>
+                                    <option value="Arts">Ali</option>
+                                    <option value="Languages">husein</option>
+                                </select>
+                            </div>
+                            
+                            <button type="submit" name="save" class="btn-save">Register Subject</button>
+                        </form>
+                    </div>
+
+                    <!-- Midig: Liiska Madooyinka (Subject List) -->
+                    <div class="panel">
+                        <h4 style="border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">Subject List</h4>
+                        <table class="subject-table">
+                            <thead>
+                                <tr>
+                                    <th>S_Code</th>
+                                    <th>Subject</th>
+                                    <th>Teacher</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>ENG101</td>
+                                    <td>English</td>
+                                    <td>Languages</td>
+                                    <td>
+                                        <div class="action-btns">
+                                            <a href="#" class="btn-edit">Edit</a>
+                                            <a href="#" class="btn-delete">Delete</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>MATH202</td>
+                                    <td>Mathematics</td>
+                                    <td>Science</td>
+                                    <td>
+                                        <div class="action-btns">
+                                            <a href="#" class="btn-edit">Edit</a>
+                                            <a href="#" class="btn-delete">Delete</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Class / Semester:</label>
-                <select name="class" required>
-                    <option value="Semester 1">Semester 1</option>
-                    <option value="Semester 2">Semester 2</option>
-                    <option value="Semester 3">Semester 3</option>
-                    <option value="Semester 4">Semester 4</option>
-                </select>
-            </div>
-            <button type="submit" name="add_subject" class="btn-submit">Add Subject</button>
-        </form>
+        </main>
     </div>
-
-    <div class="container-box">
-        <h3>Existing Subjects</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Subject ID</th>
-                    <th>Subject Name</th>
-                    <th>Class</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php while($row = mysqli_fetch_assoc($subjects_res)) { ?>
-                    <tr>
-                        <td><?php echo $row['id']; ?></td>
-                        <td><?php echo htmlspecialchars($row['subject_name']); ?></td>
-                        <td><?php echo htmlspecialchars($row['class']); ?></td>
-                    </tr>
-                <?php } ?>
-            </tbody>
-        </table>
-    </div>
-</div>
-
 </body>
 </html>
