@@ -11,7 +11,7 @@ if (isset($_POST['submit'])) {
     $email = strtolower(str_replace(' ', '', $name)) . "@school.com"; // Email male-awaal ah
 
     // Hubi in ninkani hore u diiwaangashnaa
-    
+    $check = mysqli_query($conn, "SELECT id FROM students WHERE student_id = '$student_id'");
     
     if (mysqli_num_rows($check) > 0) {
         header("Location: students.php?error=Ardaygan hore ayaa loo diiwaangeliyey!");
