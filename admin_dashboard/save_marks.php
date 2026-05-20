@@ -15,7 +15,8 @@ if(isset($_POST['save_marks'])) {
     elseif ($marks >= 70) $grade = "B";
     elseif ($marks >= 60) $grade = "C";
     elseif ($marks >= 50) $grade = "D";
-   
+    else $grade = "F";
+
     $query = "INSERT INTO marks (student_id, subject_id, full_marks, marks_obtained, grade, term, remark) 
               VALUES ('$student_id', '$subject_id', '$full_marks', '$marks', '$grade', '$term', '$remark')";
 
