@@ -187,7 +187,7 @@ $result = mysqli_query($conn, $query);
                         <option value="Form 4C">Form 4C</option>
                     </select>
                 </div>
-                <button type="submit" name="submit" class="btn-save">Save Student Record</button>
+                <Abutton type="submit" name="submit" class="btn-save">Save Student Record</button>
             </form>
         </div>
     </div>

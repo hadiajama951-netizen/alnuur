@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 18, 2026 at 05:51 PM
+-- Generation Time: May 19, 2026 at 06:04 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -40,9 +40,9 @@ CREATE TABLE `students` (
 --
 
 INSERT INTO `students` (`id`, `student_id`, `name`, `class`, `created_at`) VALUES
-(1, '16977', 'CABDIFATAAX NUUR XUSEEN', 'Form 4B', '2026-05-05 21:55:12'),
-(2, '16970', 'muuse', 'Form 4B', '2026-05-05 22:11:36'),
-(4, '88', 'CABDIFATAAX NUUR XUSEEN', 'Form 4A', '2026-05-06 07:32:41');
+(12, '001', 'Apdifatah Nour Husein', 'Form 4A', '2026-05-19 14:51:11'),
+(13, '002', 'hadiya', 'Form 4B', '2026-05-19 14:55:34'),
+(14, '007', 'maxamed', 'Form 4B', '2026-05-19 15:09:41');
 
 -- --------------------------------------------------------
 
@@ -73,8 +73,22 @@ CREATE TABLE `student_marks` (
 --
 
 INSERT INTO `student_marks` (`id`, `roll_no`, `full_name`, `class`, `math`, `english`, `science`, `somali`, `history`, `geography`, `arabic`, `islamic`, `chemistry`, `physics`, `created_at`) VALUES
-(9, '001', 'abdinasir', 'Form 4B', 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, '2026-05-18 15:15:55'),
-(10, '002', 'nimco', 'Form 4B', 50, 100, 100, 90, 80, 90, 70, 100, 100, 100, '2026-05-18 15:44:55');
+(42, '001', 'Apdifatah Nour Husein', 'Form 4A', 100, 100, 100, 100, 100, 100, 100, 100, 0, 0, '2026-05-19 14:51:11'),
+(43, '002', 'hadiya', 'Form 4B', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '2026-05-19 14:55:34'),
+(44, '007', 'maxamed', 'Form 4B', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '2026-05-19 15:09:41');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `subjects`
+--
+
+CREATE TABLE `subjects` (
+  `id` int(11) NOT NULL,
+  `subject_code` varchar(50) NOT NULL,
+  `subject_name` varchar(100) NOT NULL,
+  `teacher` varchar(100) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -97,11 +111,11 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `full_name`, `username`, `email`, `password`, `role`, `status`) VALUES
-(1, 'Admin Ali', 'admin_ali', 'ali@alnuur.edu', '12345', 'Admin', 'Active'),
-(2, 'Mohamed Ahmed', 'std_mohamed', 'mohamed@student.com', '12345', 'User', 'Active'),
-(3, 'mubaarik abdirashiid ', 'user', 'Apdifatahdipho@gmail.com', 'user', 'User', 'Active'),
-(4, 'mubaarik abdirashiid ', 'admin', 'marco@gmail.com', '1234', 'Admin', 'Active'),
-(5, 'jamac', 'jamac', 'jamac@gail.com', '123', 'Admin', 'Active');
+(26, 'Apdifatah Nour Husein', '001', 'apdifatahnourhusein@school.com', '$2y$10$6cqe.567TJM3RPWRTE7zV.UWXmxeQNGh7lfYMPVtlBNzYyBLSkMOW', 'User', 'Active'),
+(27, 'hadiya', '002', 'hadiya@school.com', '$2y$10$Ote5C3xZWZH1tHj2UeXsp.D06WL5UUgUmbf2Zh4xSJMeSv1.KO2xu', 'User', 'Active'),
+(29, 'admin', 'admin', 'admin@gmail.com', '$2y$10$Fs9ZhXcq9TR70s39POXPmeIfQCfD/f24wvcYZ7l67XzwzvC.M2d6S', 'Admin', 'Active'),
+(30, 'maxamed', '007', 'maxamed@school.com', '$2y$10$8qkq098TTW7tQ/Grc6cCYOoauv9NaqywFMvliEccgazyXBxnoKPuy', 'User', 'Active'),
+(31, 'abdifatah', 'abdifatah', 'Apdifatahdipho@gmail.com', '$2y$10$ICnRwwPnpY81CF/T00lMQeXzEEk9uRffI0tzVlUAn9XpbBsADbosK', 'Admin', 'Active');
 
 --
 -- Indexes for dumped tables
@@ -121,6 +135,12 @@ ALTER TABLE `student_marks`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `subjects`
+--
+ALTER TABLE `subjects`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
@@ -135,19 +155,25 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `students`
 --
 ALTER TABLE `students`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `student_marks`
 --
 ALTER TABLE `student_marks`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
+
+--
+-- AUTO_INCREMENT for table `subjects`
+--
+ALTER TABLE `subjects`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
