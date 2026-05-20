@@ -26,10 +26,9 @@ if (!$admins_result || !$users_result) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SPMS - User Management</title>
-    <link rel="stylesheet" href="style.css"> <!-- Hubi in style.css uu jiro -->
+    <link rel="stylesheet" href="style.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Wixii Styles ah oo dheeraad ku ah user management */
         .user-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
         .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 15px; border-left: 5px solid #1a237e; }
         .stat-icon { font-size: 25px; background: #f0f2ff; padding: 10px; border-radius: 10px; color: #1a237e; }
@@ -44,11 +43,11 @@ if (!$admins_result || !$users_result) {
         
         .add-btn { background: #1a237e; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: bold; float: right; }
         .section-title { color: #1a237e; font-size: 18px; margin: 20px 0; display: flex; align-items: center; gap: 10px; clear: both; }
+        .no-data { text-align: center; color: #888; padding: 20px; font-style: italic; }
     </style>
 </head>
 <body>
     <div class="app">
-        <!-- Sidebar: Hagaajinta Sidebar-ka -->
         <aside class="sidebar">
             <div class="brand">SPMS</div>
             <nav class="side-nav">
@@ -63,7 +62,6 @@ if (!$admins_result || !$users_result) {
         </aside>
 
         <main class="main">
-            <!-- Topbar: Meesha laga arko qofka -->
             <header class="topbar">
                 <div class="burger">☰</div>
                 <div class="user-profile" style="display: flex; align-items: center; gap: 10px;">
@@ -76,9 +74,8 @@ if (!$admins_result || !$users_result) {
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2 style="margin: 0;">User Management</h2>
                     <a href="add_user.php" class="add-btn"><i class="fas fa-plus"></i> Add New User</a>
-                </div>
+                </div>  
 
-                <!-- Stats: Tirada isticmaalayaasha -->
                 <div class="user-stats">
                     <div class="stat-card">
                         <div class="stat-icon"><i class="fas fa-users"></i></div>
@@ -94,7 +91,6 @@ if (!$admins_result || !$users_result) {
                     </div>
                 </div>
 
-                <!-- Admin Table -->
                 <div class="section-title"><i class="fas fa-shield-alt"></i> System Administrators</div>
                 <table class="user-table">
                     <thead>
@@ -107,22 +103,29 @@ if (!$admins_result || !$users_result) {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php while($row = mysqli_fetch_assoc($admins_result)) { ?>
+                        <?php 
+                        if (mysqli_num_rows($admins_result) > 0) {
+                            while($row = mysqli_fetch_assoc($admins_result)) { 
+                        ?>
                         <tr>
-                            <td><strong><?php echo $row['username']; ?></strong></td>
-                            <td><?php echo $row['email']; ?></td>
+                            <td><strong><?php echo htmlspecialchars($row['username']); ?></strong></td>
+                            <td><?php echo htmlspecialchars($row['email']); ?></td>
                             <td><span class="role-badge role-admin">Admin</span></td>
-                            <td><span style="color: #4caf50;">● Active</span></td>
+                            <td><span style="color: #4caf50;">● <?php echo htmlspecialchars($row['status']); ?></span></td>
                             <td>
                                 <a href="#" style="color: #2196f3;"><i class="fas fa-edit"></i></a> | 
                                 <a href="#" style="color: #f44336;"><i class="fas fa-trash"></i></a>
                             </td>
                         </tr>
-                        <?php } ?>
+                        <?php 
+                            } 
+                        } else { 
+                            echo "<tr><td colspan='5' class='no-data'>Weli wax Admin ah lama diwaangalin.</td></tr>";
+                        } 
+                        ?>
                     </tbody>
                 </table>
 
-                <!-- User Table -->
                 <div class="section-title"><i class="fas fa-users"></i> System Users (Students)</div>
                 <table class="user-table">
                     <thead>
@@ -135,18 +138,26 @@ if (!$admins_result || !$users_result) {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php while($row = mysqli_fetch_assoc($users_result)) { ?>
+                        <?php 
+                        if (mysqli_num_rows($users_result) > 0) {
+                            while($row = mysqli_fetch_assoc($users_result)) { 
+                        ?>
                         <tr>
-                            <td><strong><?php echo $row['username']; ?></strong></td>
-                            <td><?php echo $row['email']; ?></td>
+                            <td><strong><?php echo htmlspecialchars($row['username']); ?></strong></td>
+                            <td><?php echo htmlspecialchars($row['email']); ?></td>
                             <td><span class="role-badge role-student">User</span></td>
-                            <td><span style="color: #4caf50;">● Active</span></td>
+                            <td><span style="color: #4caf50;">● <?php echo htmlspecialchars($row['status']); ?></span></td>
                             <td>
                                 <a href="#" style="color: #2196f3;"><i class="fas fa-edit"></i></a> | 
                                 <a href="#" style="color: #f44336;"><i class="fas fa-trash"></i></a>
                             </td>
                         </tr>
-                        <?php } ?>
+                        <?php 
+                            } 
+                        } else { 
+                            echo "<tr><td colspan='5' class='no-data'>Weli wax Arday ah lama diwaangalin.</td></tr>";
+                        } 
+                        ?>
                     </tbody>
                 </table>
             </div>
