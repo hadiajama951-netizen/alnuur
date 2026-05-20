@@ -1,6 +1,6 @@
 /* style.css */
 :root {
-  --sidebar-bg: #2c3e50;
+  --sidebar-bg: #0080ff;
   --topbar-bg: #3f51b5;
   --bg-light: #f4f7f6;
   --white: #ffffff;
@@ -40,13 +40,13 @@ body {
   align-items: center;
   gap: 10px;
   padding: 15px 20px;
-  color: #bdc3c7;
+  color: #000000;
   text-decoration: none;
   transition: 0.3s;
 }
 
 .nav-item:hover, .nav-item.active {
-  background-color: #34495e;
+  background-color: #161c22;
   color: white;
   border-left: 4px solid var(--topbar-bg);
 }
