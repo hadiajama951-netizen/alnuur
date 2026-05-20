@@ -2,59 +2,104 @@
 include('conn.php'); 
 session_start();
 
-// Hubi in qofka soo galay uu yahay User
+// 1. AMNIGA: Hubi in qofka nidaamka soo galay uu yahay User caadi ah
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'User') {
-    header("Location: login.php");
+    header("Location: ../login.php"); // Hubi wadada (path-ka) login.php uu u jiro
     exit();
 }
 
 $user_id = $_SESSION['user_id'];
-$full_name = $_SESSION['full_name'];
+$roll_no = $_SESSION['username']; // Roll number-ka ardayga ee uu ku login gareeyay
+$full_name = $_SESSION['full_name']; 
 
-// 1. Soo saar dhibcaha ardayga
-$query = "SELECT * FROM marks WHERE user_id = '$user_id'";
-$result = mysqli_query($conn, $query);
+// 2. SOO AKHRISASHADA XOGTA JADWALKA STUDENT_MARKS (Hadda waxaan ku raadinaynaa Roll Number)
+$marks = null;
+if (!empty($roll_no)) {
+    $roll_no_clean = mysqli_real_escape_string($conn, trim($roll_no));
+    
+    // Raadi adoo isticmaalaya roll_no halkii aad magac ka isticmaali lahayd
+    $query = "SELECT * FROM student_marks WHERE roll_no = '$roll_no_clean' LIMIT 1";
+    $result = mysqli_query($conn, $query) or die("Khalad dhanka Database-ka: " . mysqli_error($conn));
+    $marks = mysqli_fetch_assoc($result);
+}
 
-// 2. Xisaabi wadarta dhibcaha
-$total_full = 0;
-$total_obtained = 0;
+// Qaybta raadinta maadooyinka (Search Filter)
+$search_value = "";
+if (isset($_POST['search_btn'])) {
+    $search_value = trim(strtolower($_POST['search_text']));
+}
+
+// 3. DIYAARINTA 10-KA MAADO EE JADWALKAAGA KU JIRAY
+$subjects_list = [
+    'Math' => isset($marks['math']) ? intval($marks['math']) : 0,
+    'English' => isset($marks['english']) ? intval($marks['english']) : 0,
+    'Science' => isset($marks['science']) ? intval($marks['science']) : 0,
+    'Somali' => isset($marks['somali']) ? intval($marks['somali']) : 0,
+    'History' => isset($marks['history']) ? intval($marks['history']) : 0,
+    'Geography' => isset($marks['geography']) ? intval($marks['geography']) : 0,
+    'Arabic' => isset($marks['arabic']) ? intval($marks['arabic']) : 0,
+    'Islamic' => isset($marks['islamic']) ? intval($marks['islamic']) : 0,
+    'Chemistry' => isset($marks['chemistry']) ? intval($marks['chemistry']) : 0,
+    'Physics' => isset($marks['physics']) ? intval($marks['physics']) : 0,
+];
+
+// Xisaabinta wadarta guud ee dhibcaha uu keenay ardaygu
+$total_obtained = array_sum($subjects_list);
+
+// Function lagu xisaabinayo Grade-ka iyo Remark-ga dhibco kasta
+function calculateGrade($score) {
+    if ($score >= 90) return ['grade' => 'A+', 'class' => 'grade-a', 'remark' => 'Excellent'];
+    if ($score >= 80) return ['grade' => 'A', 'class' => 'grade-a', 'remark' => 'Very Good'];
+    if ($score >= 70) return ['grade' => 'B', 'class' => 'grade-a', 'remark' => 'Good'];
+    if ($score >= 60) return ['grade' => 'C', 'class' => 'grade-a', 'remark' => 'Pass'];
+    if ($score >= 50) return ['grade' => 'D', 'class' => 'grade-a', 'remark' => 'Satisfactory'];
+    return ['grade' => 'F', 'class' => 'grade-f', 'remark' => 'Fail'];
+}
 ?>
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="so">
 <head>
     <meta charset="UTF-8">
-    <title>Student Performance - SPMS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - SPMS</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Halkan ku hay style-kaagii hore ee aad soo dirtay */
-        :root { --primary-blue: #3f51b5; --dark-sidebar: #2c3e50; --light-bg: #f4f7f6; }
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--light-bg); display: flex; }
-        .sidebar { width: 240px; background: var(--dark-sidebar); height: 100vh; color: white; position: fixed; }
-        .sidebar-header { padding: 20px; background: var(--primary-blue); text-align: center; font-weight: bold; }
-        .sidebar-menu { list-style: none; padding: 0; }
-        .sidebar-menu li { padding: 15px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
-        .sidebar-menu li.active { background: var(--primary-blue); }
-        .sidebar-menu li a { color: white; text-decoration: none; }
-        .main-content { margin-left: 240px; width: calc(100% - 240px); }
-        .top-header { background: var(--primary-blue); padding: 10px 30px; display: flex; justify-content: space-between; align-items: center; color: white; }
+        :root {
+            --primary-blue: #3f51b5;
+            --dark-sidebar: #2c3e50;
+            --light-bg: #f4f7f6;
+        }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: var(--light-bg); display: flex; }
+        .sidebar { width: 240px; background-color: var(--dark-sidebar); height: 100vh; color: white; position: fixed; }
+        .sidebar-header { padding: 20px; font-size: 22px; font-weight: bold; background: var(--primary-blue); text-align: center; }
+        .sidebar-menu { list-style: none; padding: 0; margin-top: 20px; }
+        .sidebar-menu li { padding: 15px 20px; display: flex; align-items: center; gap: 10px; transition: 0.3s; cursor: pointer; }
+        .sidebar-menu li:hover, .sidebar-menu li.active { background-color: var(--primary-blue); }
+        .sidebar-menu li a { color: white; text-decoration: none; width: 100%; display: block; }
+        .main-content { margin-left: 240px; width: calc(100% - 240px); box-sizing: border-box; }
+        .top-header { background: var(--primary-blue); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; color: white; }
         .content-body { padding: 30px; }
-        .performance-card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .student-details-bar { background: #e8f0fe; padding: 15px; border-radius: 5px; display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 25px; }
-        table { width: 100%; border-collapse: collapse; }
-        table th, table td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
-        .total-row { background: #f9f9f9; font-weight: bold; color: #2e7d32; }
-        .grade-a { color: #2e7d32; font-weight: bold; }
-        .grade-fail { color: red; font-weight: bold; }
+        .performance-card { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 30px; }
+        .student-details-bar { background-color: #e8f0fe; padding: 15px; border-radius: 5px; display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 25px; font-size: 14px; gap: 10px; }
+        .detail-item { padding: 5px 0; }
+        .detail-item b { color: var(--primary-blue); text-transform: uppercase; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
+        table th { text-align: left; padding: 12px; border-bottom: 2px solid #eee; background: #fafafa; color: var(--dark-sidebar); }
+        table td { padding: 12px; border-bottom: 1px solid #eee; color: #333; }
+        table tbody tr:hover { background-color: #f9f9f9; }
+        .grade-tag { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; display: inline-block; }
+        .grade-a { background: #e8f5e9; color: #2e7d32; }
+        .grade-f { background: #ffebee; color: #c62828; }
+        .total-row { background-color: #e8eaf6; font-weight: bold; }
+        .total-row td { color: var(--primary-blue); }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="sidebar-header">ALnour Performance</div>
+        <div class="sidebar-header">SPMS</div>
         <ul class="sidebar-menu">
-            <li><i class="fas fa-home"></i> <a href="dashboard.php">Dashboard</a></li>
-            <li class="active"><i class="fas fa-chart-line"></i> <a href="#">My Performance</a></li>
+            <li class="active"><i class="fas fa-chart-line"></i> <a href="user_dashboard.php">My Performance</a></li>
             <li><i class="fas fa-sign-out-alt"></i> <a href="logout.php">Logout</a></li>
         </ul>
     </div>
@@ -62,65 +107,57 @@ $total_obtained = 0;
     <div class="main-content">
         <div class="top-header">
             <i class="fas fa-bars"></i>
-            <div style="display:flex; align-items:center; gap:10px;">
-                <span><?php echo $full_name; ?></span>
-                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" width="30">
-            </div>
+            <div class="user-info">Teeda Natiijada: <?php echo htmlspecialchars($full_name); ?></div>
         </div>
 
         <div class="content-body">
             <div class="performance-card">
-                <h2>Natiijada Imtixaanka</h2>
-
-                <div class="student-details-bar">
-                    <div>
-                        <div><b>Magaca:</b> <?php echo $full_name; ?></div>
-                        <div><b>ID-ga:</b> STU-<?php echo $user_id; ?></div>
+                <h3><i class="fas fa-graduation-cap"></i> Natiijada Imtixaanka</h3>
+                
+                <?php if ($marks): ?>
+                    <div class="student-details-bar">
+                        <div class="detail-item">Magaca Ardayga: <b><?php echo htmlspecialchars($marks['full_name']); ?></b></div>
+                        <div class="detail-item">Roll Number: <b><?php echo htmlspecialchars($marks['roll_no']); ?></b></div>
+                        <div class="detail-item">Class / Qaybta: <b><?php echo htmlspecialchars($marks['class']); ?></b></div>
+                        <div class="detail-item">Xaaladda Natiijada: <b>Dhammaystiran</b></div>
                     </div>
-                    <div>
-                        <div><b>Taariikhda:</b> <?php echo date("d-M-Y"); ?></div>
-                        <div><b>Heerka:</b> Active Student</div>
-                    </div>
-                </div>
 
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Maadada (Subject)</th>
-                            <th>Dhibcaha Buuxa</th>
-                            <th>Dhibcaha la helay</th>
-                            <th>Darajada (Grade)</th>
-                            <th>Faallo (Remark)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php 
-                        if(mysqli_num_rows($result) > 0) {
-                            while($row = mysqli_fetch_assoc($result)) {
-                                $total_full += $row['full_marks'];
-                                $total_obtained += $row['marks_obtained'];
-                                $grade_class = ($row['grade'] == 'A') ? 'grade-a' : (($row['grade'] == 'F') ? 'grade-fail' : '');
-                                
-                                echo "<tr>
-                                    <td>{$row['subject_name']}</td>
-                                    <td>{$row['full_marks']}</td>
-                                    <td>{$row['marks_obtained']}</td>
-                                    <td class='{$grade_class}'>{$row['grade']}</td>
-                                    <td>{$row['remark']}</td>
-                                </tr>";
-                            }
-                        } else {
-                            echo "<tr><td colspan='5' style='text-align:center;'>Wax natiijo ah lama helin.</td></tr>";
-                        }
-                        ?>
-                        <tr class="total-row">
-                            <td>Wadarta Guud (Total)</td>
-                            <td><?php echo $total_full; ?></td>
-                            <td><?php echo $total_obtained; ?></td>
-                            <td colspan="2">Perc: <?php echo ($total_full > 0) ? round(($total_obtained/$total_full)*100, 1) : 0; ?>%</td>
-                        </tr>
-                    </tbody>
-                </table>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Maaddada (Subject)</th>
+                                <th>Dhibcaha (Marks Obtained)</th>
+                                <th>Ugu Sarreeya (Max Marks)</th>
+                                <th>Darajada (Grade)</th>
+                                <th>Faallo (Remark)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($subjects_list as $subject => $score): 
+                                $gradeData = calculateGrade($score);
+                            ?>
+                            <tr>
+                                <td><b><?php echo ucfirst($subject); ?></b></td>
+                                <td><?php echo $score; ?></td>
+                                <td>100</td>
+                                <td><span class="grade-tag <?php echo $gradeData['class']; ?>"><?php echo $gradeData['grade']; ?></span></td>
+                                <td><span class="<?php echo $gradeData['class']; ?>"><?php echo $gradeData['remark']; ?></span></td>
+                            </tr>
+                            <?php endforeach; ?>
+                            
+                            <tr class="total-row">
+                                <td>Wadarta Guud (Total)</td>
+                                <td><?php echo $total_obtained; ?></td>
+                                <td>1000</td>
+                                <td colspan="2">Perc: <?php echo ($total_obtained / 1000) * 100; ?>%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                <?php else: ?>
+                    <div style="padding: 20px; background: #fff3cd; color: #856404; border-radius: 5px;">
+                        ⚠️ Ma jiro wax natiijo ah oo hadda laguu galiyay Roll Number-kaaga (<?php echo htmlspecialchars($roll_no); ?>). Fadlan la xiriir maamulka.
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
