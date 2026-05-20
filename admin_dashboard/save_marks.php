@@ -1,29 +1,28 @@
 <?php
 include('conn.php');
 
-if (isset($_POST['save_marks_btn'])) {
-    // 1. Soo qaado xogta laga soo buuxiyey Form-ka
-    $student_id = mysqli_real_escape_string($conn, $_POST['student_id']);
-    $subject_id = mysqli_real_escape_string($conn, $_POST['subject_id']);
-    $score = mysqli_real_escape_string($conn, $_POST['score']);
+if(isset($_POST['save_marks'])) {
+    $student_id = $_POST['student_id'];
+    $subject_id = $_POST['subject_id'];
+    $full_marks = $_POST['full_marks'];
+    $marks = $_POST['marks_obtained'];
+    $term = $_POST['term'];
+    $remark = $_POST['remark'];
 
-    // 2. Hubi haddii ardayga maaddadan dhibco hore looga diwaangeliyey (Optional)
-    // Haddii aad rabto in hal arday hal mar uun maaddada dhibco looga qoro
-    
-    // 3. Insert query - Ku dar xogta database-ka
-    $query = "INSERT INTO marks (student_id, subject_id, score) VALUES ('$student_id', '$subject_id', '$score')";
-    
-    if (mysqli_query($conn, $query)) {
-        // Haddii ay si guul leh u badbaaddo, dib ugu celi marks.php
-        header("Location: marks.php?status=success");
-        exit();
+    // Logic yar oo Grade-ka lagu xisaabiyo
+    if ($marks >= 90) $grade = "A+";
+    elseif ($marks >= 80) $grade = "A";
+    elseif ($marks >= 70) $grade = "B";
+    elseif ($marks >= 60) $grade = "C";
+    elseif ($marks >= 50) $grade = "D";
+   
+    $query = "INSERT INTO marks (student_id, subject_id, full_marks, marks_obtained, grade, term, remark) 
+              VALUES ('$student_id', '$subject_id', '$full_marks', '$marks', '$grade', '$term', '$remark')";
+
+    if(mysqli_query($conn, $query)) {
+        echo "<script>alert('Dhibcaha waa la kaydiyey!'); window.location='add_marks.php';</script>";
     } else {
-        // Haddii uu qalad dhaco
         echo "Error: " . mysqli_error($conn);
     }
-} else {
-    // Haddii si toos ah loo soo galo faylkan iyadoo aan Form la soo marin
-    header("Location: marks.php");
-    exit();
 }
 ?>
