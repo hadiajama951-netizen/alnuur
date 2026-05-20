@@ -1,21 +1,39 @@
+</html> ////////////////
+
+
+
+
 <?php
 // 1. HALKAN KU QOR JIDKA UU YAAL COONNECTION-KAAGA (MySQLi)
 include('conn.php'); 
 
-// 2. SOO JIIDASHADA XOGTA GUUD (Wixii ku jiray Dashboard-ka)
-$total_students = 25; // Haddii aad database ka keenayso: mysqli_num_rows(mysqli_query($conn, "SELECT * FROM students"));
-$total_subjects = 6;
-$total_marks = 150;
-$pass_rate = "75%";
-
-// 3. SOO AQRAVTA XOGTA WARBIXINTA EE MIISKA (TABLE)
-$report_data = [];
+// 2. SOO JIIDASHADA XOGTA GUUD (Database ka keen)
+$total_students = 0;
+$total_subjects = 10; // Maadaama maadooyinka nidaamka ku jira ay yihiin 10 maado
 if ($conn) {
-    // Waxaad halkan ka beddeli kartaa SQL Query-ga iyadoo loo eegayo sida aad u rabto warbixinta
+    $student_count_res = mysqli_query($conn, "SELECT COUNT(id) as total FROM student_marks");
+    $total_students = ($student_count_res) ? mysqli_fetch_assoc($student_count_res)['total'] : 0;
+}
+
+// 3. SOO AQRAVTA XOGTA WARBIXINTA EE MIISKA (TABLE) - OO AY KU JIRTO SEARCH-KA
+$report_data = [];
+$search_query = "";
+
+if ($conn) {
+    $sql_condition = "";
+    
+    // Haddii uu jiro qof wax raadinaya
+    if (isset($_GET['search']) && !empty(trim($_GET['search']))) {
+        $search_query = mysqli_real_escape_string($conn, trim($_GET['search']));
+        // Wuxuu ka raadinayaa Roll No ama Magaca ardayga
+        $sql_condition = " WHERE roll_no LIKE '%$search_query%' OR full_name LIKE '%$search_query%' ";
+    }
+
     $query = "SELECT roll_no, full_name, class, 
               (math + english + science + somali + history + geography + arabic + islamic + chemistry + physics) as total_marks,
               ((math + english + science + somali + history + geography + arabic + islamic + chemistry + physics) / 10) as average
-              FROM student_marks ORDER BY id DESC";
+              FROM student_marks $sql_condition ORDER BY id DESC";
+              
     $result = mysqli_query($conn, $query);
     if ($result) {
         while ($row = mysqli_fetch_assoc($result)) {
@@ -33,8 +51,8 @@ if ($conn) {
     <title>SPMS - Reports Dashboard</title>
     <style>
         :root {
-            --primary-bg: #3b50b2; /* Midabka sare ee buluugga ah */
-            --sidebar-bg: #2d3d5a; /* Midabka sidebar-ka madowga xiga */
+            --primary-bg: #3b50b2; 
+            --sidebar-bg: #2d3d5a; 
             --body-bg: #f4f6f9;
             --text-dark: #333;
         }
@@ -46,13 +64,9 @@ if ($conn) {
             padding: 0;
         }
 
-        /* LAYOUT STYLES */
-        .app {
-            display: flex;
-            min-height: 100vh;
-        }
+        .app { display: flex; min-height: 100vh; }
 
-        /* SIDEBAR (U ekaanshiyaha sawirkaaga) */
+        /* SIDEBAR STYLES */
         .sidebar {
             width: 260px;
             min-width: 260px;
@@ -90,16 +104,8 @@ if ($conn) {
             transition: 0.3s;
         }
 
-        .nav-item:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-            color: white;
-        }
-
-        .nav-item.active {
-            background-color: rgba(0, 0, 0, 0.15);
-            color: white;
-            border-left: 4px solid #fff;
-        }
+        .nav-item:hover { background-color: rgba(255, 255, 255, 0.05); color: white; }
+        .nav-item.active { background-color: rgba(0, 0, 0, 0.15); color: white; border-left: 4px solid #fff; }
 
         /* TOP HEADER */
         .top-header {
@@ -112,47 +118,34 @@ if ($conn) {
             color: white;
         }
 
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
+        .main-content { flex: 1; display: flex; flex-direction: column; }
+        .container { padding: 30px; }
 
-        .container {
-            padding: 30px;
-        }
-
-        /* CARDS STATS (Sidii Dashboard-kaaga) */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            position: relative;
-        }
-
-        .card-blue { background-color: #2196f3; }
-        .card-green { background-color: #4caf50; }
-        .card-orange { background-color: #ff9800; }
-        .card-red { background-color: #f44336; }
-
-        .stat-card h3 { margin: 0 0 10px 0; font-size: 16px; font-weight: 400; opacity: 0.9; }
-        .stat-card .number { font-size: 32px; font-weight: bold; margin-bottom: 5px; }
-        .stat-card .link { font-size: 12px; opacity: 0.8; text-decoration: none; color: white; }
-
-        /* REPORT BUTTONS */
+        /* ACTION BAR & SEARCH */
         .action-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+            gap: 20px;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 10px;
+            background: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            align-items: center;
+        }
+
+        .search-form input {
+            border: none;
+            padding: 8px;
+            font-size: 14px;
+            outline: none;
+            width: 250px;
         }
 
         .btn {
@@ -167,7 +160,9 @@ if ($conn) {
             gap: 8px;
         }
         .btn-print { background-color: var(--primary-bg); color: white; }
-        .btn-excel { background-color: #2e7d32; color: white; margin-left: 10px; }
+        .btn-excel { background-color: #2e7d32; color: white; }
+        .btn-search { background-color: #2d3d5a; color: white; border-radius: 4px; padding: 8px 15px; text-decoration: none; font-size: 14px; }
+        .btn-clear { background-color: #e0e0e0; color: #333; border-radius: 4px; padding: 8px 15px; text-decoration: none; font-size: 14px; }
 
         /* TABLE STYLES */
         .report-card {
@@ -177,12 +172,7 @@ if ($conn) {
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
 
-        .report-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-
+        .report-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         .report-table th {
             background-color: #f8f9fa;
             color: #555;
@@ -192,31 +182,20 @@ if ($conn) {
             font-weight: 600;
         }
 
-        .report-table td {
-            padding: 14px;
-            border-bottom: 1px solid #eceff1;
-            color: #333;
-        }
+        .report-table td { padding: 14px; border-bottom: 1px solid #eceff1; color: #333; }
+        .report-table tr:hover { background-color: #f5f7fa; }
 
-        .report-table tr:hover {
-            background-color: #f5f7fa;
-        }
-
-        .status-badge {
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-        }
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
         .status-pass { background-color: #e8f5e9; color: #2e7d32; }
         .status-fail { background-color: #ffebee; color: #c62828; }
+        .no-records { text-align: center; color: #888; padding: 30px; font-style: italic; }
 
-        /* PRINT STYLES (Marka la daabacayo si uu u qurux baxo) */
+        /* PRINT STYLES */
         @media print {
-            .sidebar, .top-header, .action-bar, .link { display: none !important; }
-            .main-content { width: 100% !important; }
-            .container { padding: 0 !important; }
-            .report-card { box-shadow: none !important; padding: 0 !important; }
+            .sidebar, .top-header, .action-bar, .search-form, .brand-section { display: none !important; }
+            body, .app, .main-content, .container { background: white !important; padding: 0 !important; margin: 0 !important; width: 100% !important; }
+            .report-card { box-shadow: none !important; padding: 10px !important; }
+            .report-table th { background-color: #1a237e !important; color: white !important; -webkit-print-color-adjust: exact; }
         }
     </style>
 </head>
@@ -232,7 +211,7 @@ if ($conn) {
                 <a class="nav-item" href="marks.php">📝 Marks</a>
                 <a class="nav-item active" href="reports.php">📊 Reports</a>
                 <a class="nav-item" href="user.php">⚙️ Users</a>
-                <a class="nav-item" href="#" style="margin-top: auto; padding-bottom: 30px;">🚪 Logout</a>
+                <a class="nav-item" href="logout.php" style="margin-top: auto; padding-bottom: 30px;">🚪 Logout</a>
             </nav>
         </aside>
 
@@ -252,16 +231,27 @@ if ($conn) {
                         <h2 style="margin: 0; color: #2c3e50;">System Performance & Academic Reports</h2>
                         <p style="margin: 5px 0 0 0; color: #7f8c8d; font-size: 14px;">Xogta guud iyo warbixinta dhibcaha ardayda</p>
                     </div>
+                    
+                    <form method="GET" class="search-form">
+                        <input type="text" name="search" placeholder="Ku raadi Roll No ama Magaca..." value="<?php echo htmlspecialchars($search_query); ?>">
+                        <button type="submit" class="btn-search">🔍 Raadi</button>
+                        <?php if(!empty($search_query)): ?>
+                            <a href="reports.php" class="btn-clear">Xiri</a>
+                        <?php endif; ?>
+                    </form>
+
                     <div>
                         <button class="btn btn-print" onclick="window.print()">🖨️ Print Report</button>
                         <button class="btn btn-excel" onclick="exportTableToExcel('reportTable', 'Student-Report')">📄 Excel</button>
                     </div>
                 </div>
 
-                
                 <div class="report-card">
                     <h3 style="margin-top: 0; color: var(--sidebar-bg); border-bottom: 2px solid #f4f6f9; padding-bottom: 15px;">
-                        📋 Ardayda iyo Natiijada Guud ee Imtixaanka
+                        📋 Ardayda iyo Natiijada Guud ee Imtixaanka 
+                        <?php if(!empty($search_query)): ?> 
+                            <span style="font-size: 14px; color:#2196f3; font-weight:normal;"> (Natiijada Raadinta: "<?php echo htmlspecialchars($search_query); ?>")</span> 
+                        <?php endif; ?>
                     </h3>
                     
                     <table class="report-table" id="reportTable">
@@ -278,20 +268,7 @@ if ($conn) {
                         <tbody>
                             <?php if (empty($report_data)): ?>
                                 <tr>
-                                    <td><strong>#88</strong></td>
-                                    <td>CABDIFATAAX NUUR XUSEEN</td>
-                                    <td>Form 4A</td>
-                                    <td>871 / 1000</td>
-                                    <td>87.1%</td>
-                                    <td><span class="status-badge status-pass">Pass</span></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>#92</strong></td>
-                                    <td>AMINA AHMED CALI</td>
-                                    <td>Form 4B</td>
-                                    <td>420 / 1000</td>
-                                    <td>42.0%</td>
-                                    <td><span class="status-badge status-fail">Fail</span></td>
+                                    <td colspan="6" class="no-records">Wax xog ah oo la helay ma jiraan. Hubi Roll No ama Magaca aad qortay.</td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($report_data as $row): ?>
