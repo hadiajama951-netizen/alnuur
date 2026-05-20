@@ -1,123 +1,114 @@
+<?php 
+session_start(); 
+include('conn.php'); 
+
+$msg = ""; 
+
+if (isset($_POST['save_user'])) {
+    $full_name  = mysqli_real_escape_string($conn, trim($_POST['full_name']));
+    $username   = mysqli_real_escape_string($conn, trim($_POST['username'])); // Username-ka Admin-ka
+    $email      = mysqli_real_escape_string($conn, trim($_POST['email']));
+    $role       = 'Admin'; // Si toos ah waxaa loogu dejiyey Admin
+    
+    $password        = mysqli_real_escape_string($conn, $_POST['password']); 
+    $hashed_password = password_hash($password, PASSWORD_BCRYPT); // Ammaan sare oo sir ah
+
+    // Hubi in Username-kan horay loo qaatay
+    $check = mysqli_query($conn, "SELECT id FROM users WHERE username='$username'");
+    if (mysqli_num_rows($check) > 0) {
+        $msg = "<div class='alert error'>Username kan hore ayaa loo qaatay! Fadlan dooro mid kale.</div>";
+    } else {
+        
+        mysqli_begin_transaction($conn);
+
+        try {
+            // Ku dar shaxda Users (Maadaama uu Admin yahay, si toos ah ayuu Dashboard-ka u gelayaa)
+            $sql_user = "INSERT INTO users (full_name, username, email, password, role, status) 
+                         VALUES ('$full_name', '$username', '$email', '$hashed_password', '$role', 'Active')";
+            mysqli_query($conn, $sql_user);
+
+            mysqli_commit($conn);
+            
+            $success_msg = "Admin-ka cusub si guul leh ayaa loo diwaangeliyey!";
+            header("Location: user.php?success=" . urlencode($success_msg));
+            exit();
+
+        } catch (Exception $e) {
+            mysqli_rollback($conn);
+            $msg = "<div class='alert error'>Khalad ayaa dhacay: " . mysqli_error($conn) . "</div>";
+        }
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPMS - Admin Dashboard</title>
-    <link rel="stylesheet" href="style.css">
+    <title>SPMS - Add New Admin</title>
+    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .user-form-panel { max-width: 600px; margin: 20px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #444; }
+        .form-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn-save { background-color: #1a237e; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; font-size: 16px; }
+        .btn-save:hover { background-color: #0d1440; }
+        .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+        .error { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+    </style>
 </head>
 <body>
     <div class="app">
-        <!-- Sidebar: Waxay isku xidhaysaa boggaga nidaamka -->
         <aside class="sidebar">
             <div class="brand">SPMS</div>
             <nav class="side-nav">
-                <a class="nav-item active" href="admin_dashboard.php">🏠 Dashboard</a>
+                <a class="nav-item" href="admin_dashboard.php">🏠 Dashboard</a>
                 <a class="nav-item" href="student.php">👤 Students</a>
                 <a class="nav-item" href="subject.php">📚 Subjects</a>
-                <a class="nav-item" href="marks.php">📝 Marks</a>
-                <a class="nav-item" href="report.php">📊 Reports</a>
-                <a class="nav-item" href="user.php">⚙️ Users</a>
-                <a class="nav-item" href="#" style="margin-top: 50px;">🚪 Logout</a>
+                <a class="nav-item" href="add_marks.php">📝 Marks</a>
+                <a class="nav-item active" href="user.php">⚙️ Users</a>
+                <a class="nav-item" href="logout.php" style="margin-top: 50px;">🚪 Logout</a>
             </nav>
         </aside>
 
         <main class="main">
-            <!-- Header: Meesha laga arko qofka soo galay -->
-            <header class="topbar">
-                <div class="burger">☰</div>
-                <div class="user-profile" style="display: flex; align-items: center; gap: 10px;">
-                    <img src="https://via.placeholder.com/35" style="border-radius: 50%;" alt="Admin">
-                    <span>Admin ▼</span>
-                </div>
-            </header>
-
             <div class="content">
-                <h2 style="margin-top: 0;">Dashboard Overview</h2>
-                
-                <!-- KPI Cards: Xogta guud ee nidaamka -->
-                <div class="kpis">
-                    <div class="kpi blue">
-                        <div class="label">Students</div>
-                        <div class="value">25</div>
-                        <div style="font-size: 11px;">View all</div>
-                    </div>
-                    <div class="kpi green">
-                        <div class="label">Subjects</div>
-                        <div class="value">6</div>
-                        <div style="font-size: 11px;">View all</div>
-                    </div>
-                    <div class="kpi orange">
-                        <div class="label">Marks Entered</div>
-                        <div class="value">150</div>
-                        <div style="font-size: 11px;">View all</div>
-                    </div>
-                    <div class="kpi red">
-                        <div class="label">Users</div>
-                        <div class="value">3</div>
-                        <div style="font-size: 11px;">View all</div>
-                    </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>Add New Admin Account</h2>
+                    <a href="user.php" style="text-decoration: none; color: #1a237e; font-weight: bold;">← Back to List</a>
                 </div>
 
-                <!-- Charts & Graphs: Sida ku cad sawirka copy.jpeg -->
-                <div class="grid-2">
-                    <div class="panel">
-                        <h4>Performance Overview</h4>
-                        <div class="chart-container">
-                            <div class="bar" style="height: 80%; background-color: #4caf50;"><span class="bar-label">A</span></div>
-                            <div class="bar" style="height: 60%; background-color: #2196f3;"><span class="bar-label">B</span></div>
-                            <div class="bar" style="height: 30%; background-color: #ff9800;"><span class="bar-label">C</span></div>
-                            <div class="bar" style="height: 20%; background-color: #ff5722;"><span class="bar-label">D</span></div>
-                            <div class="bar" style="height: 10%; background-color: #f44336;"><span class="bar-label">F</span></div>
-                        </div>
-                    </div>
-
-                    <div class="panel">
-                        <h4>Overall Pass Rate</h4>
-                        <div class="donut-chart">
-                            <div class="donut-inner">
-                                <b style="font-size: 22px;">75%</b>
-                                <span style="font-size: 11px;">Pass Rate</span>
-                            </div>
-                        </div>
-                        <div style="display: flex; justify-content: center; gap: 15px; margin-top: 15px;">
-                            <span style="font-size: 12px;">🟢 Pass</span>
-                            <span style="font-size: 12px;">🔴 Fail</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Add Student Quick View: Sida ku cad sawirka copy2.jpeg -->
-                <div class="grid-2" style="margin-top: 25px;">
-                    <div class="panel">
-                        <h4>Quick Add Student</h4>
-                        <form action="save_student.php" method="POST">
-                            <div class="form-group">
-                                <label>Full Name</label>
-                                <input type="text" name="full_name" placeholder="Enter full name" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Student ID</label>
-                                <input type="text" name="student_id" placeholder="Enter student ID" required>
-                            </div>
-                            <div style="margin-top: 15px;">
-                                <button type="submit" name="save" class="btn-save">Quick Save</button>
-                            </div>
-                        </form>
-                    </div>
+                <div class="user-form-panel">
+                    <?php echo $msg; ?>
                     
-                    <div class="panel">
-                        <h4>Recent Activities</h4>
-                        <table style="font-size: 12px;">
-                            <thead>
-                                <tr><th>ID</th><th>Name</th><th>Status</th></tr>
-                            </thead>
-                            <tbody>
-                                <tr><td>001</td><td>Ali Hassan</td><td><span class="badge success">Active</span></td></tr>
-                                <tr><td>002</td><td>Ahmed Warsame</td><td><span class="badge success">Active</span></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <form method="POST">
+                        <div class="form-group">
+                            <label><i class="fas fa-user-tie"></i> Admin Full Name (Magaca Isku-dhafka ah)</label>
+                            <input type="text" name="full_name" placeholder="E.g. Ali Mohamed" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fas fa-user"></i> Username (Magaca uu ku gali lahaa nidaamka)</label>
+                            <input type="text" name="username" placeholder="E.g. alimohamed" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fas fa-envelope"></i> Email Address</label>
+                            <input type="email" name="email" placeholder="ali@example.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fas fa-lock"></i> Password</label>
+                            <input type="password" name="password" placeholder="Geli password adag" required>
+                        </div>
+
+                        <button type="submit" name="save_user" class="btn-save">
+                            <i class="fas fa-user-plus"></i> Register Admin Account
+                        </button>
+                    </form>
                 </div>
             </div>
         </main>
